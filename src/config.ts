@@ -26,7 +26,8 @@ const s3 = {
 const tweetOption = {
     daysToArchive: 3, // 3が指定された場合、8/10 0:00を過ぎた時点で8/7のツイートがアーカイブされ、7日のツイートは保存されなくなる
     includeFollowers: true,
-    utfOffset: 9
+    utfOffset: 9,
+    executeTimeInSeconds: 180 // ユーザーTL取得処理を最大何秒実行するか
 }
 
 export {

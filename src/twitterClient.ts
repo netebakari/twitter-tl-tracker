@@ -53,23 +53,25 @@ export default class TwitterClient {
      * @param user_id ユーザー。nullを指定するとホームタイムライン
      * @param sinceId これ以降
      */
-    async getRecentTweets(user: Types.UserType|null, sinceId: string): Promise<TwitterTypes.Tweet[]> {
+    async getRecentTweets(user: Types.UserType|null, sinceId: string): Promise<{apiCallCount: number, tweets: TwitterTypes.Tweet[]}> {
         const firstChunk = await this.getTweets(user, {sinceId: sinceId});
-        if (firstChunk.length < 180) { return firstChunk; }
+        if (firstChunk.length < 180) { return {apiCallCount: 1, tweets: firstChunk}; }
         let minMax = TwitterClient.getMinMaxId(firstChunk);
 
         const maxloopCount = user ? 15 : 3; // ホームタイムラインは最大800件まで。最初に1回取ったから3回ループする
-        const result: TwitterTypes.Tweet[][] = [firstChunk];
+        const chunks: TwitterTypes.Tweet[][] = [firstChunk];
+        let apiCallCount = 1;
         for(let i = 0; i < maxloopCount; i++) {
             const chunk = await this.getTweets(user, {maxId: minMax.min});
-            result.push(chunk);
+            apiCallCount++;
+            chunks.push(chunk);
             if (chunk.length === 0) { break; }
             minMax = TwitterClient.getMinMaxId(chunk);
             if (TwitterClient.compareNumber(sinceId, minMax.min) > 0) { break; }
         }
 
-        const flatten = _.flatten(result);
-        return flatten.filter(x => TwitterClient.compareNumber(x.id_str, sinceId) >= 0);
+        const tweets = _.flatten(chunks).filter(x => TwitterClient.compareNumber(x.id_str, sinceId) >= 0);
+        return {apiCallCount, tweets};
     }
 
     /**
@@ -78,7 +80,6 @@ export default class TwitterClient {
      * @param condition sinceId, maxIdのいずれかを指定する。両方省略した場合は直近の200件が返される
      */
     async getTweets(user: Types.UserType|null, condition: {sinceId?: string, maxId?: string}): Promise<TwitterTypes.Tweet[]> {
-        console.log(`${JSON.stringify(user)}のツイートを取得します。条件: ${JSON.stringify(condition)}`)
         const params: any = {
             count: 200,
             include_rts: true,
@@ -93,8 +94,7 @@ export default class TwitterClient {
             else if (user.screenName) { params.screen_name = user.screenName; }
             else { throw new Error("either screenName or userId required");}
         }
-        console.log(`endpoint=${endpoint}`)
-        console.log(`parameter=${JSON.stringify(params)}`);
+        console.log(`TwitterClient#getTweets(): endpoint=${endpoint}, parameter=${JSON.stringify(params)}`);
 
         return new Promise((resolve, reject) => {
             this.client.get(endpoint, params, function(error: any, tweets: TwitterTypes.Tweet[], response: any) {

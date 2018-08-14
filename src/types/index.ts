@@ -1,3 +1,5 @@
+import * as TweetTypes from "./twit"
+
 export declare interface ConfigRecordType {
     Provider: string;
     lastId: string;
@@ -17,4 +19,12 @@ export declare interface UserOnDb {
     sinceId: string;
     updatedAt: string;
     TTL: number;
+}
+
+/**
+ * ツイート取得の戻り値
+ */
+export declare interface TweetFetchResult {
+    apiCallCount: number;
+    tweets: TweetTypes.Tweet[];
 }
