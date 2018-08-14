@@ -152,6 +152,10 @@ export default class TwitterClient {
         return {max, min};
     }
 
+    static getMaxId(tweets: TwitterTypes.Tweet[]) {
+        return TwitterClient.getMinMaxId(tweets).max;
+    }
+
     /**
      * 2つの数値（文字型）を比較する
      * @param string1 

@@ -80,9 +80,12 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
     let loopCount = 1;
     while(totalApiCallCount <= maxApiCallCount && totalFailCount < 3 && (new Date().getTime() - startTimeInMillis) <= timelimitInSec*1000) {
         console.log(`ループ${loopCount++}回目...`);
-        const {result, apiCallCount} = await processSingleQueueMessage();
-        if (apiCallCount < 0) { break; } // キューが空っぽ
-        totalApiCallCount += apiCallCount;
+        const result = await processSingleQueueMessage();
+        totalApiCallCount += result.apiCallCount;
+        if (result.tweetData) {
+            await s3.putUserTweets(result.tweetData.tweets);
+            await sqs.deleteMessage(result.tweetData.receiptHandle);
+        }
         if (!result) { totalFailCount++; }
     }
 
@@ -90,13 +93,27 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
 }
 
 /**
- * SQSからメッセージを1件取得し、そこに書いてあるユーザーIDをもとに特定ユーザーのツイートを取得してS3に保存する
+ * ユーザーのタイムライン取得の結果
  */
-const processSingleQueueMessage = async () => {
+interface UserTweetsFetchResultType {
+    isError: boolean;
+    apiCallCount: number;
+    tweetData?: {
+        tweets: TwitterTypes.Tweet[];
+        receiptHandle: string;
+    }
+}
+
+/**
+ * SQSからメッセージを1件取得し、そこに書いてあるユーザーIDをもとに特定ユーザーのツイートを取得する。
+ * 1件以上のツイートが正常に取得できた場合、戻り値には tweetData が含まれる。
+ * 呼び出し元で receiptHandle を使ってメッセージを削除する必要がある。
+ */
+const processSingleQueueMessage = async () : Promise<UserTweetsFetchResultType> => {
     const queueMessage = await sqs.receiveMessage();
     if (queueMessage === null) {
         console.log("キューは空でした");
-        return {result: true, apiCallCount: -1};
+        return {isError: false, apiCallCount: 0};
     }
 
     let apiCallCount = 0;
@@ -119,36 +136,38 @@ const processSingleQueueMessage = async () => {
         apiCallCount = _data.apiCallCount;
             
         if (tweets.length === 0) {
+            // ツイートが見つからなかったら即メッセージは削除
             console.log("ツイートは見つかりませんでした");
             if (user) {
-                await dynamo.putUser(user.id_str, user.screenName, user.name, user.sinceId); // TTLだけ延長しておく
+                await dynamo.putUser(user.id_str, user.screenName, user.name, user.sinceId); // TTLだけ延長しておく。ツイートが見つからないとscreenNameも分からないので何もしない
             }
-        } else {
-            console.log(`${apiCallCount}回APIを叩いて${tweets.length}件のツイートが見つかりました。S3に保存します`)
-            await s3.putSingleUserTweets(tweets);
-            const minMaxId = TwitterClient.getMinMaxId(tweets);
-            const latestUser = tweets[0].user;
-            await dynamo.putUser(latestUser.id_str, latestUser.screen_name, latestUser.name, minMaxId.max);
+            await sqs.deleteMessage(queueMessage.receiptHandle);
+            return {isError: false, apiCallCount: apiCallCount}; // apiCallCountは1のはず
         }
-
-        console.log("メッセージを削除します");
-        await sqs.deleteMessage(queueMessage.receiptHandle);
-
-        return {result: true, apiCallCount: apiCallCount};
+        
+        console.log(`${apiCallCount}回APIを叩いて${tweets.length}件のツイートが見つかりました`)
+        return {
+            isError: false,
+            apiCallCount: apiCallCount,
+            tweetData: {
+                tweets: tweets,
+                receiptHandle: queueMessage.receiptHandle
+            }
+        };
     } catch(e) {
         if (e.message.indexOf("Not authorized") >= 0) {
             console.log("鍵がかかったアカウントでした。どうしようもないのでメッセージを削除します");
             await sqs.deleteMessage(queueMessage.receiptHandle);
-            return {result: true, apiCallCount: apiCallCount};
+            return {isError: false, apiCallCount: apiCallCount};
         }
         if (e.message.indexOf("that page does not exist") >= 0) {
             console.log("アカウントが消えていました。どうしようもないのでメッセージを削除します");
             await sqs.deleteMessage(queueMessage.receiptHandle);
-            return {result: true, apiCallCount: apiCallCount};
+            return {isError: false, apiCallCount: apiCallCount};
         }
         // それ以外のエラー時はリトライするためにメッセージを放置する
         console.error(e);
-        return {result: false, apiCallCount: apiCallCount};
+        return {isError: true, apiCallCount: apiCallCount};
     }
 };
 

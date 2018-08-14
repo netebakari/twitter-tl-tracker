@@ -9,11 +9,10 @@ const sqs = new AWS.SQS({region: Config.sqs.region});
 const s3 = new AWS.S3({region: Config.s3.region});
 
 export default class S3Client {
-    async putSingleUserTweets(tweets: TweetTypes.Tweet[]) {
+    async putUserTweets(tweets: TweetTypes.Tweet[]) {
         for (const chunk of TwitterClient.groupByDate(tweets)) {
             const content = JSON.stringify(chunk.tweets);
-            const user = chunk.tweets[0].user;
-            const keyName = `${Config.s3.fragmentKeyPrefix}${chunk.date}/USER_${user.screen_name}_${user.id_str}_${new Date().getTime()}.json`
+            const keyName = `${Config.s3.fragmentKeyPrefix}${chunk.date}/USER_${new Date().getTime()}.json`
             console.log(`s3://${Config.s3.bucket}/${keyName}を保存します`);
             await s3.putObject({
                 Body: content,
