@@ -121,7 +121,7 @@ export default class TwitterClient {
      */
     static alterTweet(tweet: TwitterTypes.Tweet, serverTimestamp: string) {
         delete tweet.id;
-        const timestamp = moment(tweet.created_at).utcOffset(Config.tweetOption.utfOffset);
+        const timestamp = moment(new Date(tweet.created_at)).utcOffset(Config.tweetOption.utfOffset);
         tweet.timestampLocal = timestamp.format();
         tweet.dateLocal = timestamp.format("YYYY-MM-DD");
         tweet.serverTimestamp = serverTimestamp;
