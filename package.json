@@ -1,0 +1,36 @@
+{
+  "name": "twitter-tl-tracker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "user": "node dist/cli/userTimeline.js",
+    "home": "node dist/cli/homeTimeline.js",
+    "start": "node dist/cli/exec.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/netebakari/twitter-tl-tracker.git"
+  },
+  "author": "netebakari",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/netebakari/twitter-tl-tracker/issues"
+  },
+  "homepage": "https://github.com/netebakari/twitter-tl-tracker#readme",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.11",
+    "@types/aws-sdk": "^2.7.0",
+    "@types/lodash": "^4.14.116",
+    "@types/moment": "^2.13.0",
+    "@types/node": "^10.5.7",
+    "typescript": "^3.0.1"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.288.0",
+    "lodash": "^4.17.10",
+    "moment": "^2.22.2",
+    "twit": "^2.2.11"
+  }
+}
