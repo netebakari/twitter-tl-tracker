@@ -67,7 +67,7 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
     let totalApiCallCount = 0;
     let totalFailCount = 0;
     let loopCount = 1;
-    while(totalApiCallCount <= maxApiCallCount || totalFailCount < 3 || (new Date().getTime() - startTimeInMillis) <= timelimitInSec*1000) {
+    while(totalApiCallCount <= maxApiCallCount && totalFailCount < 3 && (new Date().getTime() - startTimeInMillis) <= timelimitInSec*1000) {
         console.log(`ループ${loopCount++}回目...`);
         const {result, apiCallCount} = await processSingleQueueMessage();
         if (apiCallCount < 0) { break; } // キューが空っぽ
