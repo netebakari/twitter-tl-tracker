@@ -46,7 +46,8 @@ export default class SqsClient {
         };
 
         const data = await sqs.getQueueAttributes(params).promise();
-        return data.Attributes["ApproximateNumberOfMessages"] as number;
+        if (data === undefined || data.Attributes === undefined) { throw new Error("キューの取得に失敗しました"); }
+        return +data.Attributes["ApproximateNumberOfMessages"];
     }
 }
 
