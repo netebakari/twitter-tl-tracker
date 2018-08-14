@@ -6,7 +6,6 @@ const sqs = new AWS.SQS({region: Config.sqs.region});
 export default class SqsClient {
     
     async send(userId: string) {
-
         const params = {
             MessageBody: userId,
             QueueUrl: Config.sqs.queueUrl,
@@ -35,7 +34,19 @@ export default class SqsClient {
             ReceiptHandle: receiptHandle
         }
         const data = await sqs.deleteMessage (params).promise();
+    }
 
+    /**
+     * キューに入っているメッセージの数を返す
+     */
+    async getMessageCount() {
+        const params = {
+            QueueUrl: Config.sqs.queueUrl,
+            AttributeNames: ["ApproximateNumberOfMessages"]
+        };
+
+        const data = await sqs.getQueueAttributes(params).promise();
+        return data.Attributes["ApproximateNumberOfMessages"] as number;
     }
 }
 

@@ -1,4 +1,3 @@
-import * as AWS from "aws-sdk"
 import * as LambdaType from 'aws-lambda'
 import * as Config from "./config"
 import * as TwitterTypes from "./types/twit"
@@ -13,11 +12,11 @@ const twitter = new TwitterClient();
 const dynamo = new DynamoDbClient();
 const sqs = new SQSClient();
 const s3 = new S3Client();
+
 /**
  * entry point
  */
 exports.handler = async (event: any, context: LambdaType.Context) => {
-    return true;
 };
 
 
@@ -25,6 +24,11 @@ exports.handler = async (event: any, context: LambdaType.Context) => {
  * 
  */
 exports.dailyTask = async (event: any, context: LambdaType.Context) => {
+    return true;
+};
+
+exports.hourlyTask = async (event: any, context: LambdaType.Context) => {
+    const messageCount = await sqs.getMessageCount();
     return true;
 };
 
