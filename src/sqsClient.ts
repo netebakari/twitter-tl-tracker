@@ -8,8 +8,7 @@ export default class SqsClient {
     async send(userId: string) {
         const params = {
             MessageBody: userId,
-            QueueUrl: Config.sqs.queueUrl,
-            MessageGroupId: "TRACKER"
+            QueueUrl: Config.sqs.queueUrl
         };
 
         return sqs.sendMessage(params).promise();

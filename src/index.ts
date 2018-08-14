@@ -17,6 +17,7 @@ const s3 = new S3Client();
  * entry point
  */
 exports.handler = async (event: any, context: LambdaType.Context) => {
+    return true;
 };
 
 
@@ -29,6 +30,16 @@ exports.dailyTask = async (event: any, context: LambdaType.Context) => {
 
 exports.hourlyTask = async (event: any, context: LambdaType.Context) => {
     const messageCount = await sqs.getMessageCount();
+    if (messageCount > 3600) { return true; }
+
+    let ids: string[] = [];
+    const followee = await twitter.getFriendsOrFollowersId({userId: Config.tweetOption.myUserIdStr}, true);
+    while(ids.length < 3600) {
+        ids = _.flatten([ids, followee]);
+    }
+    for(const id of ids) {
+        sqs.send(id);
+    }
     return true;
 };
 
