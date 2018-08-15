@@ -88,14 +88,14 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
     let totalApiCallCount = 0;
     let totalFailCount = 0;
     let loopCount = 1;
-    while(totalApiCallCount <= maxApiCallCount && totalFailCount < 3 && (new Date().getTime() - startTimeInMillis) <= timelimitInSec*1000) {
-        console.log(`ループ${loopCount++}回目...`);
+    while(totalApiCallCount <= maxApiCallCount && totalFailCount < 2 && (new Date().getTime() - startTimeInMillis) <= timelimitInSec*1000) {
+        console.log(`ループ${loopCount++}回目... API呼び出し回数: ${totalApiCallCount}, エラー: ${totalFailCount}）, 経過ミリ秒=${new Date().getTime() - startTimeInMillis}`);
         const chunk = await processSingleQueueMessage();
         totalApiCallCount += chunk.apiCallCount;
         if (chunk.tweetData) {
             result.push(chunk.tweetData);
         }
-        if (!result) { totalFailCount++; }
+        if (chunk.isError) { totalFailCount++; }
     }
 
     console.log("ループを抜けました。まとめてS3更新とDynamoDB更新を行います");
