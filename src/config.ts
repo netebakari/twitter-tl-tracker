@@ -27,8 +27,8 @@ const tweetOption = {
     daysToArchive: 3, // 3が指定された場合、8/10 0:00を過ぎた時点で8/7のツイートがアーカイブされ、7日のツイートは保存されなくなる
     includeFollowers: true,
     utfOffset: 9,
-    executeTimeInSeconds: 180, // ユーザーTL取得処理を最大何秒実行するか
-    myUserIdStr: "9999999"
+    executeTimeInSeconds: 180, // ユーザーTL取得処理を最大何秒実行するか。その後の処理もあるので実行間隔より短くする（5分間隔なら180秒とか）
+    myUserIdStr: "9999999" // 自分のユーザーID
 }
 
 export {
