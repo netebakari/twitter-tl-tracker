@@ -7,6 +7,7 @@
     "user": "node dist/cli/userTimeline.js",
     "home": "node dist/cli/homeTimeline.js",
     "start": "node dist/cli/exec.js",
+    "hourly": "node dist/cli/hourlyTask.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
