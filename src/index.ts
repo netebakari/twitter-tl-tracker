@@ -75,19 +75,29 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
     const timelimitInSec = Config.tweetOption.executeTimeInSeconds;
     const maxApiCallCount = timelimitInSec * 0.95;
 
-    // 実行時間が設定時間に達するか、失敗回数が3回に達したか、API呼び出し回数が（設定時間×0.95）回になったら終了
+    // 結果
+    const result: {tweets: TwitterTypes.Tweet[]; receiptHandle: string;}[] = [];
+
+    // 実行時間が設定時間に達するか、失敗回数が3回に達したか、API呼び出し回数が（設定時間×0.95）回になったらループ終了
     let totalApiCallCount = 0;
     let totalFailCount = 0;
     let loopCount = 1;
     while(totalApiCallCount <= maxApiCallCount && totalFailCount < 3 && (new Date().getTime() - startTimeInMillis) <= timelimitInSec*1000) {
         console.log(`ループ${loopCount++}回目...`);
-        const result = await processSingleQueueMessage();
-        totalApiCallCount += result.apiCallCount;
-        if (result.tweetData) {
-            await s3.putUserTweets(result.tweetData.tweets);
-            await sqs.deleteMessage(result.tweetData.receiptHandle);
+        const chunk = await processSingleQueueMessage();
+        totalApiCallCount += chunk.apiCallCount;
+        if (chunk.tweetData) {
+            result.push(chunk.tweetData);
         }
         if (!result) { totalFailCount++; }
+    }
+
+    console.log("ループを抜けました。まとめてS3更新とDynamoDB更新を行います");
+    const tweets = _.flatten(result.map(x => x.tweets));
+    await s3.putUserTweets(tweets);
+    console.log("キューを削除します...")
+    for(const receiptHandle of result.map(x => x.receiptHandle)) {
+        await sqs.deleteMessage(receiptHandle);
     }
 
     return true;
