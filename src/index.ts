@@ -30,15 +30,21 @@ exports.dailyTask = async (event: any, context: LambdaType.Context) => {
 
 exports.hourlyTask = async (event: any, context: LambdaType.Context) => {
     const messageCount = await sqs.getMessageCount();
-    if (messageCount > 3600) { return true; }
+    console.log(`現在キューに入っているメッセージはだいたい${messageCount}件です`);
+    if (messageCount > 3600) {
+        console.log("いっぱいあるので何もしません")
+        return true;
+    }
 
     let ids: string[] = [];
-    const followee = await twitter.getFriendsOrFollowersId({userId: Config.tweetOption.myUserIdStr}, true);
-    while(ids.length < 3600) {
-        ids = _.flatten([ids, followee]);
+    const followeeIds = await twitter.getFriendsOrFollowersId({userId: Config.tweetOption.myUserIdStr}, true);
+    while(messageCount + ids.length < 3600) {
+        ids = _.flatten([ids, followeeIds]);
     }
+
+    console.log(`新しくユーザーIDを${ids.length}件投入します`);
     for(const id of ids) {
-        sqs.send(id);
+        await sqs.send(id);
     }
     return true;
 };
