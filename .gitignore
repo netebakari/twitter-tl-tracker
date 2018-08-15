@@ -1,3 +1,6 @@
+# built deploy package
+*.zip
+
 # transpiled javascript source files
 dist/
 
