@@ -133,7 +133,7 @@ export default class TwitterClient {
      * @param daysCount 何日遡るか。0なら当日
      */
     static getStatusId(daysCount: number) {
-        const now = moment().utcOffset(9);
+        const now = moment().utcOffset(Config.tweetOption.utfOffset);
         const cinderellaTime = moment(`${now.format("YYYY-MM-DD")}T00:00:00+09:00`); // 今日の0時0分のUnixTime
         const unixTime = +cinderellaTime.format("X") - daysCount * 24 * 3600; // 求める日の0時0分のUnixTime
         const time = unixTime - 1288834974.657; // マジックナンバーを引く
