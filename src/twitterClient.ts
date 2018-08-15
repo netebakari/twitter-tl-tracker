@@ -56,18 +56,20 @@ export default class TwitterClient {
     async getRecentTweets(user: Types.UserType|null, sinceId: string): Promise<{apiCallCount: number, tweets: TwitterTypes.Tweet[]}> {
         const firstChunk = await this.getTweets(user, {sinceId: sinceId});
         if (firstChunk.length < 180) { return {apiCallCount: 1, tweets: firstChunk}; }
-        let minMax = TwitterClient.getMinMaxId(firstChunk);
+        let minimumId = TwitterClient.getMinimumId(firstChunk);
 
         const maxloopCount = user ? 15 : 3; // ホームタイムラインは最大800件まで。最初に1回取ったから3回ループする
         const chunks: TwitterTypes.Tweet[][] = [firstChunk];
         let apiCallCount = 1;
         for(let i = 0; i < maxloopCount; i++) {
-            const chunk = await this.getTweets(user, {maxId: minMax.min});
+            const chunk = await this.getTweets(user, {maxId: minimumId});
             apiCallCount++;
             chunks.push(chunk);
             if (chunk.length === 0) { break; }
-            minMax = TwitterClient.getMinMaxId(chunk);
-            if (TwitterClient.compareNumber(sinceId, minMax.min) > 0) { break; }
+            const newMinimumId = TwitterClient.getMinimumId(chunk);
+            // IDの最小値が更新できなかったか、IDの最小値が最初に与えたsinceIdと同等以下になったら終わり
+            if (minimumId === newMinimumId || TwitterClient.compareNumber(sinceId, newMinimumId) >= 0) { break; } 
+            minimumId = newMinimumId;
         }
 
         const tweets = _.flatten(chunks).filter(x => TwitterClient.compareNumber(x.id_str, sinceId) >= 0);
@@ -141,19 +143,20 @@ export default class TwitterClient {
         return Math.floor(time * 1024 * 1024 * 4) + "000";
     }
 
-    static getMinMaxId(tweets: TwitterTypes.Tweet[]) {
-        if (tweets.length == 0) { return {max: "", min: ""}; }
-        let max = tweets[0].id_str;
-        let min = tweets[0].id_str;
-        for(let tweet of tweets) {
-            if (TwitterClient.compareNumber(tweet.id_str, max) > 0) { max = tweet.id_str; }
-            if (TwitterClient.compareNumber(min, tweet.id_str) > 0) { min = tweet.id_str; }
-        }
-        return {max, min};
+    /**
+     * 与えられたツイートの中で最小のIDを取得
+     * @param tweets 
+     */
+    static getMinimumId(tweets: TwitterTypes.Tweet[]) {
+        return tweets.map(x => x.id_str).reduce((prev, current) => TwitterClient.compareNumber(prev, current) < 0 ? prev : current);
     }
 
+    /**
+     * 与えられたツイートの中で最大のIDを取得
+     * @param tweets 
+     */
     static getMaxId(tweets: TwitterTypes.Tweet[]) {
-        return TwitterClient.getMinMaxId(tweets).max;
+        return tweets.map(x => x.id_str).reduce((prev, current) => TwitterClient.compareNumber(prev, current) > 0 ? prev : current);
     }
 
     /**
