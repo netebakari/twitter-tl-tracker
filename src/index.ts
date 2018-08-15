@@ -7,6 +7,7 @@ import DynamoDbClient from "./dynamoDbClient"
 import SQSClient from "./sqsClient"
 import S3Client from "./s3Client"
 import _ from "lodash"
+import moment from 'moment';
 
 const twitter = new TwitterClient();
 const dynamo = new DynamoDbClient();
@@ -20,14 +21,47 @@ exports.handler = async (event: any, context: LambdaType.Context) => {
     return true;
 };
 
-
 /**
- * 
+ * entry point
  */
 exports.dailyTask = async (event: any, context: LambdaType.Context) => {
+    console.log("処理開始");
+    const date = moment().utcOffset(Config.tweetOption.utfOffset).add(-Config.tweetOption.daysToArchive, "days");
+    const keys = await s3.getFragments(date);
+    const allTweets: TwitterTypes.Tweet[] = [];
+    const ids: string[] = [];
+    console.log(moment());
+    console.log(`ホームTLが${keys.homeTweets.length}件、ユーザーTLが${keys.userTweets.length}件見つかりました`);
+    console.log("ホームTLのマージを行います");
+    for(const key of keys.homeTweets) {
+        const tweets = await s3.getContents(key);
+        for(const tweet of tweets) {
+            if (ids.indexOf(tweet.id_str) === -1) {
+                ids.push(tweet.id_str);
+                allTweets.push(tweet);
+            }
+        }
+    }
+    console.log("ユーザーTLのマージを行います");
+    for(const key of keys.userTweets) {
+        const tweets = await s3.getContents(key);
+        for(const tweet of tweets) {
+            if (ids.indexOf(tweet.id_str) === -1) {
+                ids.push(tweet.id_str);
+                allTweets.push(tweet);
+            }
+        }
+    }
+    console.log("マージが終わりました。ソートします");
+    allTweets.sort((a, b) => TwitterClient.compareNumber(a.id_str, b.id_str));
+    console.log("ソートが終わりました。アップロードします");
+    await s3.putArchivedTweets(date, allTweets);
     return true;
 };
 
+/**
+ * キューを埋める
+ */
 exports.hourlyTask = async (event: any, context: LambdaType.Context) => {
     const messageCount = await sqs.getMessageCount();
     console.log(`現在キューに入っているメッセージはだいたい${messageCount}件です`);
