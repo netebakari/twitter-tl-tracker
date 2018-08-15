@@ -54,10 +54,11 @@ exports.homeTimeline = async (event: any, context: LambdaType.Context) => {
     const {tweets} = await twitter.getRecentTweets(null, sinceId);
 
     if (tweets.length > 0) {
-        const minMax = TwitterClient.getMinMaxId(tweets);
-        console.log(`${minMax.min}から${minMax.max}までを取得しました`);
+        const minId = TwitterClient.getMinimumId(tweets);
+        const maxId = TwitterClient.getMaxId(tweets);
+        console.log(`${minId}から${maxId}までを取得しました`);
         await s3.putTimelineTweets(tweets);
-        await dynamo.updateTImelineRecord(minMax.max);
+        await dynamo.updateTImelineRecord(maxId);
     }
 
     return true;
