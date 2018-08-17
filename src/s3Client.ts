@@ -54,9 +54,10 @@ export default class S3Client {
         if (!firstChunk.Contents) { return []; }
         const keys = [firstChunk.Contents.map(x => x.Key) ];
 
-        let continueToken = firstChunk.ContinuationToken;
+        // NextContinuationTokenがある限り繰り返し取得
+        let continueToken = firstChunk.NextContinuationToken;
         while (continueToken) {
-            console.log(`検索します: continueToken=${continueToken}`);
+            //console.log(`検索します: continueToken=${continueToken}`);
             const chunk = await s3.listObjectsV2({
                 Bucket: Config.s3.bucket,
                 Prefix: keyPrefix,
@@ -65,7 +66,7 @@ export default class S3Client {
             if (chunk.Contents) {
                 keys.push(chunk.Contents.map(x => x.Key));
             }
-            continueToken = chunk.ContinuationToken;
+            continueToken = chunk.NextContinuationToken;
         }
 
         return _.flatMap(keys).filter(x => x) as string[];
