@@ -28,10 +28,10 @@
     "@types/lodash": "^4.14.116",
     "@types/moment": "^2.13.0",
     "@types/node": "^10.5.7",
-    "typescript": "^3.0.1"
+    "typescript": "^3.0.1",
+    "aws-sdk": "^2.288.0"
   },
   "dependencies": {
-    "aws-sdk": "^2.288.0",
     "lodash": "^4.17.10",
     "moment": "^2.22.2",
     "twit": "^2.2.11"
