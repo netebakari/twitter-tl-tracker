@@ -118,7 +118,7 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
     // 結果
     const result: {tweets: TwitterTypes.Tweet[]; receiptHandle: string;}[] = [];
 
-    // 実行時間が設定時間に達するか、失敗回数が3回に達したか、API呼び出し回数が（設定時間×0.95）回になったらループ終了
+    // 実行時間が設定時間に達するか、失敗回数が2回に達したか、API呼び出し回数が（設定時間×0.95）回になったらループ終了
     let totalApiCallCount = 0;
     let totalFailCount = 0;
     let loopCount = 1;
@@ -127,15 +127,29 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
         const chunk = await processSingleQueueMessage();
         totalApiCallCount += chunk.apiCallCount;
         if (chunk.tweetData) {
+            // ここに来た時点で必ず1件はツイートがある
             result.push(chunk.tweetData);
         }
         if (chunk.isError) { totalFailCount++; }
     }
 
-    console.log("ループを抜けました。まとめてS3更新とDynamoDB更新を行います");
+    console.log("ループを抜けました");
     const tweets = _.flatten(result.map(x => x.tweets));
+    const userIds = _.uniq(tweets.map(x => x.user.id_str));
+
+    console.log(`${userIds.length}人のユーザーTLから合計${tweets.length}件のツイートを取得しました。S3に保存します`);
     await s3.putUserTweets(tweets);
-    console.log("キューを削除します...")
+
+    console.log("DynamoDBを更新します");
+    for(const userId of userIds) {
+        const userTweets = tweets.filter(x => x.user.id_str === userId);
+        const maxId = TwitterClient.getMaxId(userTweets);
+        const user = userTweets[0].user;
+        console.log(`@${user.screen_name}(id=${user.id_str})のsinceIdを${maxId}に更新します`);
+        await dynamo.putUser(userId, user.screen_name, user.name, maxId);
+    }
+
+    console.log("キューを削除します")
     for(const receiptHandle of result.map(x => x.receiptHandle)) {
         await sqs.deleteMessage(receiptHandle);
     }
@@ -158,7 +172,7 @@ interface UserTweetsFetchResultType {
 /**
  * SQSからメッセージを1件取得し、そこに書いてあるユーザーIDをもとに特定ユーザーのツイートを取得する。
  * 1件以上のツイートが正常に取得できた場合、戻り値には tweetData が含まれる。
- * 呼び出し元で receiptHandle を使ってメッセージを削除する必要がある。
+ * 呼び出し元で receiptHandle を使ってメッセージを削除し、DynamoDBを更新する必要がある。
  */
 const processSingleQueueMessage = async () : Promise<UserTweetsFetchResultType> => {
     const queueMessage = await sqs.receiveMessage();
