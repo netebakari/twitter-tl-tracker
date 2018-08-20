@@ -12,7 +12,8 @@ export default class S3Client {
     async putUserTweets(tweets: TweetTypes.Tweet[]) {
         for (const chunk of TwitterClient.groupByDate(tweets)) {
             const content = chunk.tweets.map(x => JSON.stringify(x)).join("\n");
-            const keyName = `${Config.s3.fragmentKeyPrefix}${chunk.date}/USERv2_${new Date().getTime()}.json`
+            const now = moment().format("YYYYMMDD.HHmmss.SSS");
+            const keyName = `${Config.s3.fragmentKeyPrefix}${chunk.date}/USERv2_${now}.json`
             console.log(`s3://${Config.s3.bucket}/${keyName}を保存します`);
             await s3.putObject({
                 Body: content,
