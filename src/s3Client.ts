@@ -6,14 +6,13 @@ import * as _ from "lodash"
 import TwitterClient from "./twitterClient";
 import moment from "moment";
 
-const sqs = new AWS.SQS({region: Config.sqs.region});
 const s3 = new AWS.S3({region: Config.s3.region});
 
 export default class S3Client {
     async putUserTweets(tweets: TweetTypes.Tweet[]) {
         for (const chunk of TwitterClient.groupByDate(tweets)) {
-            const content = JSON.stringify(chunk.tweets);
-            const keyName = `${Config.s3.fragmentKeyPrefix}${chunk.date}/USER_${new Date().getTime()}.json`
+            const content = chunk.tweets.map(x => JSON.stringify(x)).join("\n");
+            const keyName = `${Config.s3.fragmentKeyPrefix}${chunk.date}/USERv2_${new Date().getTime()}.json`
             console.log(`s3://${Config.s3.bucket}/${keyName}を保存します`);
             await s3.putObject({
                 Body: content,
@@ -26,8 +25,9 @@ export default class S3Client {
 
     async putTimelineTweets(tweets: TweetTypes.Tweet[]) {
         for (const chunk of TwitterClient.groupByDate(tweets)) {
-            const content = JSON.stringify(chunk.tweets);
-            const keyName = `${Config.s3.fragmentKeyPrefix}${chunk.date}/TIMELINE_${new Date().getTime()}.json`
+            const content = chunk.tweets.map(x => JSON.stringify(x)).join("\n");
+            const now = moment().format("YYYYMMDD.HHmmss.SSS");
+            const keyName = `${Config.s3.fragmentKeyPrefix}${chunk.date}/TIMELINEv2_${now}.json`
             console.log(`s3://${Config.s3.bucket}/${keyName}を保存します`);
             await s3.putObject({
                 Body: content,
@@ -38,10 +38,15 @@ export default class S3Client {
         }
     }
 
+    /**
+     * 指定した日付のツイートログの断片のキーを取得
+     * @param date 
+     */
     async getFragments(date: moment.Moment) {
         const keyPrefix = `${Config.s3.fragmentKeyPrefix}${date.format("YYYY-MM-DD")}`;
-        const userTweets = await this.getAllObjects(`${keyPrefix}/USER_`);
-        const homeTweets = await this.getAllObjects(`${keyPrefix}/TIMELINE_`);
+
+        const userTweets = await this.getAllObjects(`${keyPrefix}/USERv2_`);
+        const homeTweets = await this.getAllObjects(`${keyPrefix}/TIMELINEv2_`);
         return {userTweets, homeTweets};
     }
 
@@ -72,17 +77,23 @@ export default class S3Client {
         return _.flatMap(keys).filter(x => x) as string[];
     }
 
-    async getContents(keyName: string): Promise<TweetTypes.Tweet[]> {
+    /**
+     * S3のJSONを読み出してパースする。バケットはConfigで指定されたものを使う
+     * @param keyName キー
+     */
+    async getTweets(keyName: string): Promise<TweetTypes.Tweet[]> {
         const data = await s3.getObject({
             Bucket: Config.s3.bucket,
             Key: keyName
         }).promise();
 
+        // 1行ごとにJSONが並んでいる形なので直接パースはできない
         if (typeof(data.Body) === "string") {
-            return JSON.parse(data.Body);
+            return data.Body.split("\n").map(x => JSON.parse(x));
         }
         if (Buffer.isBuffer(data.Body)) {
-            return JSON.parse(data.Body.toString());
+            const str = data.Body.toString();
+            return str.split("\n").map(x => JSON.parse(x));
         }
         throw new Error("wakannna-i");
     }

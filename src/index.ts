@@ -22,11 +22,21 @@ exports.handler = async (event: any, context: LambdaType.Context) => {
 };
 
 /**
- * entry point
+ * ログをマージして1個のJSONにする
  */
-exports.dailyTask = async (event: any, context: LambdaType.Context) => {
+exports.archive = async (event: any, context: LambdaType.Context) => {
     console.log("処理開始");
-    const date = moment().utcOffset(Config.tweetOption.utfOffset).add(-Config.tweetOption.daysToArchive, "days");
+
+    // 引数 daysToBack で指定されていたらその日数だけ戻る（0なら当日、1なら1日前など）。指定がなかったら設定値
+    const daysToBack = +event.daysToBack || Config.tweetOption.daysToArchive;
+}
+
+/**
+ * 指定された日のログをマージして1個のJSONにする。この処理に限ってはS3へのアクセス権限だけあればいい
+ * @param date 
+ */
+const archive = async(date: moment.Moment) => {
+    console.log(`${date.format("YYYY-MM-DD")}のログを処理します`);
     const keys = await s3.getFragments(date);
     const allTweets: TwitterTypes.Tweet[] = [];
     const ids: string[] = [];
@@ -34,7 +44,7 @@ exports.dailyTask = async (event: any, context: LambdaType.Context) => {
     console.log(`ホームTLが${keys.homeTweets.length}件、ユーザーTLが${keys.userTweets.length}件見つかりました`);
     console.log("ホームTLのマージを行います");
     for(const key of keys.homeTweets) {
-        const tweets = await s3.getContents(key);
+        const tweets = await s3.getTweets(key);
         for(const tweet of tweets) {
             if (ids.indexOf(tweet.id_str) === -1) {
                 ids.push(tweet.id_str);
@@ -42,9 +52,10 @@ exports.dailyTask = async (event: any, context: LambdaType.Context) => {
             }
         }
     }
+
     console.log("ユーザーTLのマージを行います");
     for(const key of keys.userTweets) {
-        const tweets = await s3.getContents(key);
+        const tweets = await s3.getTweets(key);
         for(const tweet of tweets) {
             if (ids.indexOf(tweet.id_str) === -1) {
                 ids.push(tweet.id_str);
@@ -52,6 +63,7 @@ exports.dailyTask = async (event: any, context: LambdaType.Context) => {
             }
         }
     }
+
     console.log("マージが終わりました。ソートします");
     allTweets.sort((a, b) => TwitterClient.compareNumber(a.id_str, b.id_str));
     console.log("ソートが終わりました。アップロードします");
@@ -199,7 +211,7 @@ const processSingleQueueMessage = async () : Promise<UserTweetsFetchResultType> 
         const _data = await twitter.getRecentTweets({userId: queueMessage.userId}, sinceId);
         const tweets = _data.tweets;
         apiCallCount = _data.apiCallCount;
-            
+        
         if (tweets.length === 0) {
             // ツイートが見つからなかったら即メッセージは削除
             console.log("ツイートは見つかりませんでした");
