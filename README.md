@@ -2,7 +2,12 @@
 Twitterのログを取りたい（なるべくたくさん）
 
 # モチベーション
-UserStreamが死んでしまったので少なくともそれと同等のツイートのログを取りたい
+UserStreamが死んでしまったので少なくともそれと同等のツイートのログを取りたい（なるべく）
+
+# 実際にやること
+他のクライアントと同様にホームTLを取得するだけでなく、自分のフォロイー全員のTLを巡回して全てのツイートを取得する。これによりUserStreamのall repliesオプションと同じようなTLを保存することを試みる。
+
+サーバーレス。全ての処理はLambdaが行い、結果はS3に保存する。
 
 # 処理概要＆構成
 定周期実行されるLambdaが3つある。
@@ -23,7 +28,7 @@ UserStreamが死んでしまったので少なくともそれと同等のツイ�
 * フォロイーだけではなく、フォロワーを取得対象に加えることも可（ストーカー気質の人向け）
 
 ## 4. マージ処理
-未実装。1と3が吐いたファイルを結合し、ソートして重複を排除して書き出す
+**未実装。** 1と3が吐いた全てのファイルを結合し、ソートして重複を排除して1個のファイルに書き出す
 
 # ツイート保存先
 * ホームTLは `/fragments/2018-08-20/TIMELINEv2_20180820.063923.920.json` のような名前
@@ -84,7 +89,7 @@ Create Stackから `cloudformation.yaml` をアップロードしてStackを作�
     <tr><th>TwitterUserId</th><td>自分のTwitterユーザーID。スクリーンネームではないので注意</td></tr>
     <tr><th>UploadedPackageBucketName</th><td>パッケージ(.zip)をアップロードしたS3のバケット名</td></tr>
     <tr><th>UploadedPackageKeyName</th><td>パッケージ(.zip)のキー名</td></tr>
-    <tr><th>UtfOffsetInHours</th><td>見た通り。日本時間なら9</td></tr>
+    <tr><th>UtfOffsetInHours</th><td>見た通り。日本時間なら9。くたばれ夏時間</td></tr>
   </tboby>
 </table>
 
@@ -105,7 +110,7 @@ Create Stackから `cloudformation.yaml` をアップロードしてStackを作�
 
 # CloudFormationによって作成されるもの
 ## SQS
-上述の通り、スケジュールとして使っている
+上述の通り、スケジュール管理に使っている
 
 ## DynamoDB
 primary keyは `id_str` で、ユーザーの簡単な情報と、取得済みの最新ツイートのID(`sinceId`)を保存している。
@@ -118,6 +123,7 @@ RCU/WCUは5にしているが、レコードのサイズが極端に小さいた
 ### Twitter-TL-Tracker-HomeTimeline
 * ホームTL取得Lambda
 * ハンドラ: `index.homeTimeline`
+* 自動実行: 1～2分おき
 * メモリ: 128MB
 
 ### Twitter-TL-Tracker-QueueFiller
@@ -129,6 +135,7 @@ RCU/WCUは5にしているが、レコードのサイズが極端に小さいた
 ### Twitter-TL-Tracker-UserTimeline
 * ユーザーTL取得Lambda
 * ハンドラ: `index.userTL`
+* 自動実行: 5分おき
 * メモリ: 320MB
   * 時間帯にもよるが、128MBだと大抵メモリが溢れて強制終了する。特に初回は全ユーザーの数日前からのツイートを取得しようとするため320MB程度があたりがオススメ。稼働を始めたら128MBにして多分大丈夫
 
