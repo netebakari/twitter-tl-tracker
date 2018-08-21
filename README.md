@@ -14,12 +14,14 @@ UserStreamが死んでしまったので少なくともそれと同等のツイ�
   * マージ処理は未実装
 
 # 動作環境
+全てAWS上で動作。
+
 * Lambda 
   * 今のところ処理は全部Lambda(Node.js v8.10)で書いている
 * SQS
   * 上述の「巡回するユーザーのリスト」を格納する場所として利用
   * 定期的に自分がフォローしている人のリストを作成し、ユーザーIDだけを書いたメッセージをSQSに投入
-  * ここに自分のフォロワーを加えることも可（ストーカー気質の人向け）
+  * フォロイーだけではなく、ここに自分のフォロワーを加えることも可（ストーカー気質の人向け）
 * DynamoDB
   * ホームTLおよびユーザーTLをどこまで取得したか管理するためにDynamoDBのテーブルを1件利用している
 * S3
@@ -29,51 +31,89 @@ UserStreamが死んでしまったので少なくともそれと同等のツイ�
     * ユーザーTLは `/fragments/2018-08-20/USERv2_20180820.071617.530.json` のような名前
   * これを1日単位でマージして定期的に `/tweets` 以下に格納する
 
-# インストール前の準備
-## S3
-ツイートを保存するためのバケットを用意する
+# インストール
+## TwitterのAPIキーを取得
+頑張ってください。
 
-## DynamoDB
-テーブルを1個作成する。キーは `id_str` （文字列）とする
-※レコードのサイズが非常に小さいためRCU/WCUは5程度で余裕
-
-## SQS
-キューを1個作成する。Default Visibility Timeoutは10分に、他の値はデフォルトでよい
-
-## IAMロール
-以上のリソースにアクセスできるIAMロールを作成する。これはLambdaに割り当てる
-
-# ビルド＆デプロイ
+## ビルド
 ```
-git cone
+git clone https://github.com/netebakari/twitter-tl-tracker.git
+cd twitter-tl-tracker
 npm install
+npx tsc
 ```
-それから `src/config.ts` を書き換え、
+
+ビルドが通ったことを確認したら、不要なモジュールを除去した上でデプロイパッケージを作る。（この辺はどうやるのが正道なのかよく分からない...）
 
 ```
-npx tsc
 rm -rf node_modules/
 npm install --production
 npm run build
 ```
 
-でアップロードするためのモジュールができる。これをもとに3個のLambdaを作る：
+これで `myFunc.zip` が生成される。
 
+## S3にアップロード
+作ったパッケージをS3の適当な場所にアップロードしておく。
+
+```
+aws s3 cp myFunc.zip s3://your-bucket/tracker.zip
+```
+
+## CloudFormationを実行
+AWSのコンソールから操作する。
+https://ap-northeast-1.console.aws.amazon.com/cloudformation/
+
+Create Stackから `cloudformation.yaml` をアップロードしてStackを作成する。設定しなくてはいけないパラメーターがいっぱいある。（TODO: 説明を書く）
+
+* AccessToken
+* AccessTokenSecret
+* ConsumerKey
+* ConsumerSecret
+* DaysToArchive
+* DynamoDbTableName
+* IncludeFollowers
+* QueueName
+* RoleName
+* S3BucketName
+* TTLinDays
+* TwitterUserId
+* UploadedPackageBucketName
+* UploadedPackageKeyName
+* UtfOffsetInHours
+
+
+
+* monitoring timeは1分程度に設定（0だとコケる）
+* "I acknowledge that AWS CloudFormation might create IAM resources with custom names" にチェックを入れるのを忘れないようにする
+
+
+
+
+
+# 作成されるもの
+## Lambda
+3つのLambdaが作成されるが、内容は全て同じ。実行されるハンドラだけが違う。
+
+### Twitter-TL-Tracker-QueueFiller
 * キュー埋めLambda
-  * ハンドラ: `index.hourlyTask`
-  * 自動実行: 30分～1時間おき
-* ホームTL取得Lambda
-  * ハンドラ: `index.homeTimeline`
-  * 自動実行: 2分おき
-* ユーザーTL取得Lambda
-  * ハンドラ: `index.userTL`
-  * 自動実行: 5分おき（Configの設定に合わせる）
-  * メモリ: 時間帯にもよるが、128MBだとギリギリかメモリが溢れて強制終了する。特に初回は全ユーザーの数日前からのツイートを取得しようとするため320MB～384MBあたりがオススメ（様子を見ながら小さくする）
+* ハンドラ: `index.hourlyTask`
+* 自動実行: 30分～1時間おき
 
+### Twitter-TL-Tracker-HomeTimeline
+* ホームTL取得Lambda
+* ハンドラ: `index.homeTimeline`
+* 自動実行: 2分おき
+
+### Twitter-TL-Tracker-UserTimeline
+* ユーザーTL取得Lambda
+* ハンドラ: `index.userTL`
+* 自動実行: 5分おき（Configの設定に合わせる）
+* メモリ: 320MB
+  * 時間帯にもよるが、128MBだとギリギリかメモリが溢れて強制終了する。特に初回は全ユーザーの数日前からのツイートを取得しようとするため320MB程度があたりがオススメ。稼働を始めたら128MBにして多分大丈夫
 
 # Todo
 * マージ処理がクソ重たくて実用にならないのをなんとかする
-* リソースを手動で作るのはダサいのでなんとかする
 
 # なぜなに
 ## Configにベタ書きするな、環境変数に書け

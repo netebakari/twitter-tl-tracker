@@ -1,0 +1,217 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  # Twitter
+  ConsumerKey:
+    Default: '***ConsumerKey***'
+    Description: Twitter App Consumer Key
+    Type: String
+  ConsumerSecret:
+    Default: '***ConsumerSecret***'
+    Description: Twitter App Consumer Secret
+    Type: String
+  AccessToken:
+    Default: '***AccessToken***'
+    Description: Twitter App Access Token
+    Type: String
+  AccessTokenSecret:
+    Default: '***AccessTokenSecret***'
+    Description: Twitter App Access Token Secret
+    Type: String
+
+  # deploy package location
+  UploadedPackageBucketName:
+    Default: "your-bucket-name"
+    AllowedPattern: '^[a-z0-9\-_\.]+$'
+    Description: Your S3 Bucket Name
+    Type: String
+  UploadedPackageKeyName:
+    Default: ""
+    Description: Path to uploaded deploy package
+    Type: String
+
+  # config
+  TTLinDays:
+    Default: 3
+    Description: DynamoDB TTL in days
+    Type: Number
+  DaysToArchive:
+    Default: 4
+    Description: Number of days to archive tweets
+    Type: Number
+  IncludeFollowers:
+    Default: false
+    AllowedPattern: "true|false"
+    Description: "'true' or 'false'. If true, all the tweets of your followers fetched and archived"
+    Type: String
+  UtfOffsetInHours:
+    Default: 9
+    Description: timezone
+    Type: Number
+  TwitterUserId:
+    Default: "12345"
+    AllowedPattern: "^[0-9]+$"
+    Description: Your Twitter Id *not screen name*
+    Type: String
+
+  # AWS Resources
+  S3BucketName:
+    Default: "your-bucket-name-for-tweet-log"
+    AllowedPattern: '^[a-z0-9\-_\.]+$'
+    Description: S3 Bucket Name
+    Type: String
+  DynamoDbTableName:
+    Default: TwitterTLTracker-Timelines
+    Description: DynamoDB Table Name
+    Type: String
+  QueueName:
+    Default: TwitterTLTracker-ScheduleQueue
+    Description: SQS Queue Name
+    Type: String
+  RoleName:
+    Default: TwitterTLTracker-Lambda
+    Description: IAM Role Name (only for Lambda)
+    Type: String
+  
+Resources:
+  UserIdQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      VisibilityTimeout: 300
+      QueueName: !Sub '${QueueName}'
+
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub ${S3BucketName}
+
+  TimelineDynamoDB:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: !Sub '${DynamoDbTableName}'
+      AttributeDefinitions:
+        - AttributeName: id_str
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id_str
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TimeToLiveSpecification:
+        AttributeName: TTL
+        Enabled: true
+
+  IAMRoleForLambda:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub ${RoleName}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+  IamPolicyLambda1:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: CloudWatch-Logs
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'logs:CreateLogGroup'
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+            Resource: "*"
+      Roles:
+        - !Ref IAMRoleForLambda
+
+  IamPolicyLambda2:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: SQS
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'sqs:DeleteMessage'
+              - 'sqs:ReceiveMessage'
+              - 'sqs:SendMessage'
+              - 'sqs:GetQueueAttributes'
+            Resource: !GetAtt UserIdQueue.Arn
+      Roles:
+        - !Ref IAMRoleForLambda
+
+  IamPolicyLambda3:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: DynamoDB
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - "dynamodb:PutItem"
+              - "dynamodb:Scan"
+              - "dynamodb:Query"
+              - "dynamodb:UpdateItem"
+            Resource: !GetAtt TimelineDynamoDB.Arn
+      Roles:
+        - !Ref IAMRoleForLambda
+
+  IamPolicyLambda4:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: S3
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - "s3:PutObject"
+              - "s3:ListBucket"
+            Resource:
+              - !Sub arn:aws:s3:::${S3BucketName}/fragments/*
+              - !Sub arn:aws:s3:::${S3BucketName}
+      Roles:
+        - !Ref IAMRoleForLambda
+
+  MainLambda2:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: Test-Neko2
+      Description: Hello CloudFormation
+      Environment:
+        Variables:
+          twitter_consumer_key: !Sub ${ConsumerKey}
+          twitter_consumer_secret: !Sub ${ConsumerSecret}
+          twitter_access_token: !Sub ${AccessToken}
+          twitter_access_token_secret: !Sub ${AccessTokenSecret}
+          dynamoDb_region: !Sub ${AWS::Region}
+          dynamoDb_tableName: !Sub ${DynamoDbTableName}
+          dynamoDb_ttlInDays: !Sub ${TTLinDays}
+          sqs_region: !Sub ${AWS::Region}
+          sqs_queueUrl: !Sub https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${QueueName}
+          s3_region: !Sub ${AWS::Region}
+          s3_bucket: !Sub ${S3BucketName}
+          s3_fragmentKeyPrefix: "fragments/"
+          s3_dailyLogPrefix: "tweets/"
+          options_daysToArchive: 4
+          options_includeFollowers: !Sub ${IncludeFollowers}
+          options_utfOffset: !Sub ${UtfOffsetInHours}
+          options_executeTimeInSeconds: 240
+          options_myUserIdStr: !Sub ${TwitterUserId}
+      Handler: "index.handler"
+      MemorySize: 256
+      Role: !GetAtt IAMRoleForLambda.Arn
+      Runtime: nodejs8.10
+      Timeout: 55
+      Code:
+        S3Bucket: !Sub ${UploadedPackageBucketName}
+        S3Key: !Sub ${UploadedPackageKeyName}
