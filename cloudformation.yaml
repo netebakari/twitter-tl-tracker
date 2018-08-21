@@ -182,11 +182,11 @@ Resources:
       Roles:
         - !Ref IAMRoleForLambda
 
-  MainLambda2:
+  LambdaHomeTL:
     Type: 'AWS::Lambda::Function'
     Properties:
-      FunctionName: Test-Neko2
-      Description: Hello CloudFormation
+      FunctionName: Twitter-TL-Tracker-HomeTimeline
+      Description: '[Twitter-TL-Tracker] ホームTL取得'
       Environment:
         Variables:
           twitter_consumer_key: !Sub ${ConsumerKey}
@@ -207,11 +207,79 @@ Resources:
           options_utfOffset: !Sub ${UtfOffsetInHours}
           options_executeTimeInSeconds: 240
           options_myUserIdStr: !Sub ${TwitterUserId}
-      Handler: "index.handler"
+      Handler: "index.homeTimeline"
       MemorySize: 256
       Role: !GetAtt IAMRoleForLambda.Arn
       Runtime: nodejs8.10
       Timeout: 55
+      Code:
+        S3Bucket: !Sub ${UploadedPackageBucketName}
+        S3Key: !Sub ${UploadedPackageKeyName}
+
+  LambdaQueueFillter:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: Twitter-TL-Tracker-QueueFillter
+      Description: '[Twitter-TL-Tracker] スケジューラー'
+      Environment:
+        Variables:
+          twitter_consumer_key: !Sub ${ConsumerKey}
+          twitter_consumer_secret: !Sub ${ConsumerSecret}
+          twitter_access_token: !Sub ${AccessToken}
+          twitter_access_token_secret: !Sub ${AccessTokenSecret}
+          dynamoDb_region: !Sub ${AWS::Region}
+          dynamoDb_tableName: !Sub ${DynamoDbTableName}
+          dynamoDb_ttlInDays: !Sub ${TTLinDays}
+          sqs_region: !Sub ${AWS::Region}
+          sqs_queueUrl: !Sub https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${QueueName}
+          s3_region: !Sub ${AWS::Region}
+          s3_bucket: !Sub ${S3BucketName}
+          s3_fragmentKeyPrefix: "fragments/"
+          s3_dailyLogPrefix: "tweets/"
+          options_daysToArchive: 4
+          options_includeFollowers: !Sub ${IncludeFollowers}
+          options_utfOffset: !Sub ${UtfOffsetInHours}
+          options_executeTimeInSeconds: 180
+          options_myUserIdStr: !Sub ${TwitterUserId}
+      Handler: "index.hourlyTask"
+      MemorySize: 128
+      Role: !GetAtt IAMRoleForLambda.Arn
+      Runtime: nodejs8.10
+      Timeout: 120
+      Code:
+        S3Bucket: !Sub ${UploadedPackageBucketName}
+        S3Key: !Sub ${UploadedPackageKeyName}
+
+  LambdaUserTL:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: Twitter-TL-Tracker-userTL
+      Description: '[Twitter-TL-Tracker] ユーザーID取得'
+      Environment:
+        Variables:
+          twitter_consumer_key: !Sub ${ConsumerKey}
+          twitter_consumer_secret: !Sub ${ConsumerSecret}
+          twitter_access_token: !Sub ${AccessToken}
+          twitter_access_token_secret: !Sub ${AccessTokenSecret}
+          dynamoDb_region: !Sub ${AWS::Region}
+          dynamoDb_tableName: !Sub ${DynamoDbTableName}
+          dynamoDb_ttlInDays: !Sub ${TTLinDays}
+          sqs_region: !Sub ${AWS::Region}
+          sqs_queueUrl: !Sub https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${QueueName}
+          s3_region: !Sub ${AWS::Region}
+          s3_bucket: !Sub ${S3BucketName}
+          s3_fragmentKeyPrefix: "fragments/"
+          s3_dailyLogPrefix: "tweets/"
+          options_daysToArchive: 4
+          options_includeFollowers: !Sub ${IncludeFollowers}
+          options_utfOffset: !Sub ${UtfOffsetInHours}
+          options_executeTimeInSeconds: 180
+          options_myUserIdStr: !Sub ${TwitterUserId}
+      Handler: "index.userTL"
+      MemorySize: 320
+      Role: !GetAtt IAMRoleForLambda.Arn
+      Runtime: nodejs8.10
+      Timeout: 240
       Code:
         S3Bucket: !Sub ${UploadedPackageBucketName}
         S3Key: !Sub ${UploadedPackageKeyName}
