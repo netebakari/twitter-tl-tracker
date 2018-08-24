@@ -32,6 +32,20 @@ exports.archive = async (event: any, context: LambdaType.Context) => {
 }
 
 /**
+ * 現在の自分の状態（フォロイー・フォロワーのID一覧、like全件）を取得する
+ */
+exports.snapshot = async (event: any, context: LambdaType.Context) => {
+    // const friendIds = await twitter.getFriendsOrFollowersId({userId: Config.tweetOption.myUserIdStr}, true);
+    // const followerIds = await twitter.getFriendsOrFollowersId({userId: Config.tweetOption.myUserIdStr}, false);
+    const tweetResult = await twitter.getFavorites({screenName: "kmayu"});
+    console.log(`API CALL: ${tweetResult.apiCallCount}`);
+    tweetResult.tweets.sort((a, b) => { return TwitterClient.compareNumber(a.id_str, b.id_str) });
+    for(const tweet of tweetResult.tweets) {
+        console.log(`${tweet.id_str} ${tweet.timestampLocal} : ${tweet.full_text}`);
+    }
+}
+
+/**
  * 指定された日のログをマージして1個のJSONにする。この処理に限ってはS3へのアクセス権限だけあればいい
  * @param date 
  */

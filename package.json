@@ -8,6 +8,7 @@
     "home": "node dist/cli/homeTimeline.js",
     "start": "node dist/cli/exec.js",
     "hourly": "node dist/cli/hourlyTask.js",
+    "snapshot": "node dist/cli/snapshot.js",
     "archive": "node dist/cli/archive.js",
     "build": "cd dist; zip -r ../myFunc.zip *; cd ..; zip -r -u myFunc.zip node_modules/",
     "test": "echo \"Error: no test specified\" && exit 1"
