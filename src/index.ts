@@ -32,17 +32,31 @@ exports.archive = async (event: any, context: LambdaType.Context) => {
 }
 
 /**
- * 現在の自分の状態（フォロイー・フォロワーのID一覧、like全件）を取得する
+ * 現在の自分の状態（フォロイー・フォロワーのID一覧、like全件）を取得し、前回からの差分を抽出する
  */
-exports.snapshot = async (event: any, context: LambdaType.Context) => {
-    // const friendIds = await twitter.getFriendsOrFollowersId({userId: Config.tweetOption.myUserIdStr}, true);
-    // const followerIds = await twitter.getFriendsOrFollowersId({userId: Config.tweetOption.myUserIdStr}, false);
-    const tweetResult = await twitter.getFavorites({screenName: "kmayu"});
-    console.log(`API CALL: ${tweetResult.apiCallCount}`);
-    tweetResult.tweets.sort((a, b) => { return TwitterClient.compareNumber(a.id_str, b.id_str) });
-    for(const tweet of tweetResult.tweets) {
-        console.log(`${tweet.id_str} ${tweet.timestampLocal} : ${tweet.full_text}`);
+exports.event = async (event: any, context: LambdaType.Context) => {
+    // 現在のf/fを取得（IDのみ）
+    const friendsIds = await twitter.getFriendsOrFollowersIds({userId: Config.tweetOption.myUserIdStr}, true);
+    const followersIds = await twitter.getFriendsOrFollowersIds({userId: Config.tweetOption.myUserIdStr}, false);
+
+    // S3に保存しておいた最後のf/fを取得（IDのみ）
+    const latest = await s3.getLatestFriendFollowerIds() || {friendsIds, followersIds}; // 初回実行時は差分なしと判定される
+
+    // 差分のIDを算出
+    const newFriendsIds = _.difference(friendsIds, latest.friendsIds);
+    const newFollowersIds = _.difference(followersIds, latest.followersIds);
+    const lostFriendsIds = _.difference(latest.friendsIds, friendsIds);
+    const lostFollowersIds = _.difference(latest.followersIds, followersIds);
+
+    // ユーザー情報を取得
+    const userIds = _.uniq(_.flatten([newFriendsIds, newFollowersIds, lostFriendsIds, lostFollowersIds]));
+    if (userIds.length > 0) {
+        const users = await twitter.lookupUsers(userIds);
+        
     }
+
+    const now = moment().utcOffset(Config.tweetOption.utfOffset);
+    //await s3.putFriendAndFollowerIds(now, {friendsIds, followersIds});
 }
 
 /**
@@ -97,7 +111,7 @@ exports.hourlyTask = async (event: any, context: LambdaType.Context) => {
     }
 
     let ids: string[] = [];
-    const followeeIds = await twitter.getFriendsOrFollowersId({userId: Config.tweetOption.myUserIdStr}, true);
+    const followeeIds = await twitter.getFriendsOrFollowersIds({userId: Config.tweetOption.myUserIdStr}, true);
     while(messageCount + ids.length < 3600) {
         ids = _.flatten([ids, followeeIds]);
     }

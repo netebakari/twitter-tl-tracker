@@ -19,11 +19,37 @@ export default class TwitterClient {
     }
    
     /**
+     * users/lookup を叩いてユーザー情報を取得する
+     * @param userIds ユーザーIDの配列。100件ごとにまとめてAPIがコールされる
+     */
+    async lookupUsers(userIds: string[]) {
+        const doPost = async (params: any) => {
+            return new Promise((resolve, reject) => {
+                this.client.post("users/lookup", params, function(error: any, result: any) {
+                    if (error) { reject(error); }
+                    resolve(result);
+                });
+            });
+        }
+
+        let apiCallCount = 0;
+        const chunks = [];
+        for(let i = 0; i < userIds.length; i += 100) {
+            const userIdsPart = userIds.slice(i, i + 100);
+            const params = {user_id: userIdsPart.join(","), include_entities: true, tweet_mode: "extended"};
+            apiCallCount++;
+            chunks.push(await doPost(params));
+        }
+
+        return {apiCallCount, users: _.flatten(chunks)};
+    }
+
+    /**
      * あるユーザーのフォロワーまたはフォロイーのIDを取得する
      * @param user screenNameまたはuserIdでユーザーを指定する。どちらかが必須。両方指定されていたらuserIdが優先される
      * @param friendsOrFollowers trueならフォロイー（フォローしている人）を、falseならフォロワーを取得する
      */
-    async getFriendsOrFollowersId(user: Types.UserType, friendsOrFollowers: boolean): Promise<string[]> {
+    async getFriendsOrFollowersIds(user: Types.UserType, friendsOrFollowers: boolean): Promise<string[]> {
         const result: Array<Array<string>> = [];
         let chunk = await this._getFriendsOrFollowersId(user, friendsOrFollowers);
         result.push(chunk.ids);
