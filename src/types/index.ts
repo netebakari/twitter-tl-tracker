@@ -28,3 +28,11 @@ export declare interface TweetFetchResult {
     apiCallCount: number;
     tweets: TweetTypes.Tweet[];
 }
+
+/**
+ * フォロイー・フォロワーのIDリスト
+ */
+export declare interface FriendsAndFollowersIdsType {
+    friendsIds: string[];
+    followersIds: string[];
+}

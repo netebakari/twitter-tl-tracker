@@ -110,5 +110,58 @@ export default class S3Client {
             ContentType: "application/json; charset=utf-8"
         }).promise();
     }
+
+    
+    /**
+     * フォロイー・フォロワーのIDデータを保存する。タイムスタンプ付きのものと latest.json の2つを保存する
+     */
+    async putFriendAndFollowerIds(timestamp: moment.Moment, ids: Types.FriendsAndFollowersIdsType) {
+        await s3.putObject({
+            Bucket: Config.s3.bucket,
+            Key: `${Config.s3.fragmentKeyPrefix}ff/latest.json`,
+            Body: JSON.stringify(ids),
+            ContentType: "application/json; charset=utf-8"
+        }).promise();
+
+        await s3.putObject({
+            Bucket: Config.s3.bucket,
+            Key: `${Config.s3.fragmentKeyPrefix}ff/FF_${timestamp.format("YYYY-MM-DD_HHmm")}.json`,
+            Body: JSON.stringify(ids),
+            ContentType: "application/json; charset=utf-8"
+        }).promise();
+    }
+
+
+    /**
+     * 前回保存したフォロイー・フォロワーのIDデータを取得する。見つからなければnullが返される
+     */
+    async getLatestFriendFollowerIds() {
+        try {
+            const data = await s3.getObject({
+                Bucket: Config.s3.bucket,
+                Key: `${Config.s3.fragmentKeyPrefix}event/ff/latest.json`
+            }).promise();
+            if (typeof(data.Body) === "string") { return JSON.parse(data.Body) as Types.FriendsAndFollowersIdsType; }
+            if (Buffer.isBuffer(data)) { return JSON.parse(data.toString("utf-8")) as Types.FriendsAndFollowersIdsType; }
+        } catch(e) {
+        }
+        return null;
+    }
+
+    /**
+     * 前回保存したいいねのツイートのIDのリストを取得する。見つからなければnullが返される
+     */
+    async getLatestFavoriteTweetIds() {
+        try {
+            const data = await s3.getObject({
+                Bucket: Config.s3.bucket,
+                Key: `${Config.s3.fragmentKeyPrefix}event/favorites/latest.json`
+            }).promise();
+            if (typeof(data.Body) === "string") { return JSON.parse(data.Body) as string[]; }
+            if (Buffer.isBuffer(data)) { return JSON.parse(data.toString("utf-8")) as string[]; }
+        } catch(e) {
+        }
+        return null;
+    }
 }
 
