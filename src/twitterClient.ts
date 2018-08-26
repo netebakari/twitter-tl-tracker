@@ -22,14 +22,14 @@ export default class TwitterClient {
      * users/lookup を叩いてユーザー情報を取得する
      * @param userIds ユーザーIDの配列。100件ごとにまとめてAPIがコールされる
      */
-    async lookupUsers(userIds: string[]) {
-        const doPost = async (params: any) => {
+    async lookupUsers(userIds: string[]): Promise<{apiCallCount: number, users: TwitterTypes.TwitterUser[]}> {
+        const doPost = async (params: any): Promise<TwitterTypes.TwitterUser[]> => {
             return new Promise((resolve, reject) => {
                 this.client.post("users/lookup", params, function(error: any, result: any) {
                     if (error) { reject(error); }
                     resolve(result);
                 });
-            });
+            }) as Promise<TwitterTypes.TwitterUser[]>;
         }
 
         let apiCallCount = 0;
