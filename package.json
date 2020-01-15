@@ -24,17 +24,17 @@
   },
   "homepage": "https://github.com/netebakari/twitter-tl-tracker#readme",
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.11",
+    "@types/aws-lambda": "^8.10.39",
     "@types/aws-sdk": "^2.7.0",
-    "@types/lodash": "^4.14.116",
+    "@types/lodash": "^4.14.149",
     "@types/moment": "^2.13.0",
-    "@types/node": "^10.5.7",
-    "typescript": "^3.0.1",
-    "aws-sdk": "^2.288.0"
+    "@types/node": "^13.1.7",
+    "aws-sdk": "^2.603.0",
+    "typescript": "^3.7.4"
   },
   "dependencies": {
-    "lodash": "^4.17.10",
-    "moment": "^2.22.2",
+    "lodash": "^4.17.15",
+    "moment": "^2.24.0",
     "twit": "^2.2.11"
   }
 }
