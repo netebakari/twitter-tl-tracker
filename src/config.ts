@@ -1,43 +1,8 @@
-/**
- * 環境変数の値を取得する。見つからなければ例外をスローする
- * @param names 
+import * as env from "./env";
+
+/***
+ * 環境変数をグループ分けして保持するクラス
  */
-const checkAndGet = (...names: string[]) => {
-    const result: string[] = [];
-    for(const name of names) {
-        if (process.env[name] === undefined) {
-            throw new Error(`environment variable '${name}' not found`);
-        }
-        result.push(process.env[name] as string);
-    }
-    return result;
-}
-
-const environmentVariableNames = [
-    "twitter_consumer_key",
-    "twitter_consumer_secret",
-    "twitter_access_token",
-    "twitter_access_token_secret",
-    "dynamoDb_region",
-    "dynamoDb_tableName",
-    "dynamoDb_ttlInDays",
-    "sqs_region",
-    "sqs_queueUrl",
-    "s3_region",
-    "s3_bucket",
-    "s3_fragmentKeyPrefix",
-    "s3_dailyLogPrefix",
-    "options_daysToArchive",
-    "options_includeFollowers",
-    "options_utfOffset",
-    "options_executeTimeInSeconds",
-    "options_myUserIdStr"
-];
-
-if (process.env["twitter_consumer_key"] === undefined) {
-    // 絶対あるはずの twitter_consumer_key が見つからなければこれはローカル環境だと思うことにする
-    environmentVariableNames.forEach(x => { process.env[x] = process.env[x] || process.env[`npm_package_config_${x}`]; });
-}
 
 class TwitterToken {
     public readonly consumer_key: string;
@@ -45,22 +10,21 @@ class TwitterToken {
     public readonly access_token: string;
     public readonly access_token_secret: string;
     constructor() {
-        const env = checkAndGet("twitter_consumer_key", "twitter_consumer_secret", "twitter_access_token", "twitter_access_token_secret");
-        this.consumer_key = env[0];
-        this.consumer_secret = env[1];
-        this.access_token = env[2];
-        this.access_token_secret = env[3];
+        this.consumer_key = env.twitter_consumer_key;
+        this.consumer_secret = env.twitter_consumer_secret;
+        this.access_token = env.twitter_access_token;
+        this.access_token_secret = env.twitter_access_token_secret;
     }
 }
+
 class DynamoDb {
     public readonly region: string;
     public readonly tableName: string;
     public readonly ttlInDays: number;
     constructor() {
-        const env = checkAndGet("dynamoDb_region", "dynamoDb_tableName", "dynamoDb_ttlInDays");
-        this.region = env[0];
-        this.tableName = env[1];
-        this.ttlInDays = +(env[2]);
+        this.region = env.dynamoDb_region;
+        this.tableName = env.dynamoDb_tableName;
+        this.ttlInDays = +env.dynamoDb_ttlInDays;
         if (this.ttlInDays === NaN) {
             throw new Error("environment variable 'dynamoDb_ttlInDays' is not a number");
         }
@@ -71,9 +35,8 @@ class Sqs {
     public readonly region: string;
     public readonly queueUrl: string;
     constructor() {
-        const env = checkAndGet("sqs_region", "sqs_queueUrl");
-        this.region = env[0];
-        this.queueUrl = env[1];
+        this.region = env.sqs_region;
+        this.queueUrl = env.sqs_queueUrl;
     }
 }
 
@@ -83,11 +46,10 @@ class S3 {
     public readonly fragmentKeyPrefix: string;
     public readonly dailyLogPrefix: string;
     constructor() {
-        const env = checkAndGet("s3_region", "s3_bucket", "s3_fragmentKeyPrefix", "s3_dailyLogPrefix");
-        this.region = env[0];
-        this.bucket = env[1];
-        this.fragmentKeyPrefix = env[2];
-        this.dailyLogPrefix = env[3];
+        this.region = env.s3_region;
+        this.bucket = env.s3_bucket;
+        this.fragmentKeyPrefix = env.s3_fragmentKeyPrefix;
+        this.dailyLogPrefix = env.s3_dailyLogPrefix;
     }
 }
 
@@ -101,15 +63,15 @@ class Options {
     public readonly executeTimeInSeconds: number;
     public readonly myUserIdStr: string;
     constructor() {
-        const env = checkAndGet("options_daysToArchive", "options_includeFollowers", "options_utfOffset", "options_executeTimeInSeconds", "options_myUserIdStr");
-        if (env[1].toLowerCase() !== "true" && env[1].toLowerCase() !== "false") {
+        // const env = checkAndGet("options_daysToArchive", "options_includeFollowers", "options_utfOffset", "options_executeTimeInSeconds", "options_myUserIdStr");
+        if (env.options_includeFollowers.toLowerCase() !== "true" && env.options_includeFollowers.toLowerCase() !== "false") {
             throw new Error("environment variable 'options_includeFollowers' is not a boolean");
         }
-        this.daysToArchive = +env[0];
-        this.includeFollowers = (env[1].toLowerCase() === "true");
-        this.utfOffset = +env[2];
-        this.executeTimeInSeconds = +env[3];
-        this.myUserIdStr = env[4];
+        this.daysToArchive = +env.options_daysToArchive;
+        this.includeFollowers = (env.options_includeFollowers.toLowerCase() === "true");
+        this.utfOffset = +env.options_utfOffset;
+        this.executeTimeInSeconds = +env.options_executeTimeInSeconds;
+        this.myUserIdStr = env.options_myUserIdStr;
 
         if (this.daysToArchive === NaN) {
             throw new Error("environment variable 'options_daysToArchive' is not a number");
@@ -123,6 +85,7 @@ class Options {
 
     }
 }
+
 const twitterToken = new TwitterToken();
 const dynamoDb = new DynamoDb();
 const sqs = new Sqs();

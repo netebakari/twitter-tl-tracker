@@ -33,6 +33,7 @@
     "typescript": "^3.7.4"
   },
   "dependencies": {
+    "dotenv": "^8.2.0",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "twit": "^2.2.11"
