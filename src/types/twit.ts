@@ -36,3 +36,19 @@ export const isUsers = (arg: any): arg is twit.Twitter.User[] => {
     if (!Array.isArray(arg)) { return false; }
     return (arg.every(x => isUser(x)));
 }
+
+export const isFriendsOrFollowersIdResultType = (arg: any): arg is FriendsOrFollowersIdResultType => {
+    if (!arg) { return false; }
+    if (typeof(arg) !== "object") { return false; }
+    if (!Array.isArray(arg.ids)) { return false; }
+    return true;
+}
+export type FriendsOrFollowersIdResultType = {
+    ids: string[];
+    next_cursor: number;
+    next_cursor_str: string;
+    previous_cursor: number;
+    previous_cursor_str: string;
+    total_count: null|number;
+};
+

@@ -1,5 +1,6 @@
 import Twit, * as twit from "twit";
 import * as Types from "./types"
+import * as TwitTypes from "./types/twit"
 import * as _ from "lodash";
 import * as Config from "./config"
 import moment from "moment"
@@ -25,13 +26,14 @@ export default class TwitterClient {
      * @param userIds ユーザーIDの配列。100件ごとにまとめてAPIがコールされる
      */
     async lookupUsers(userIds: string[]): Promise<{apiCallCount: number, users: Types.User[]}> {
-        const doPost = async (params: any): Promise<Types.User[]> => {
-            return new Promise((resolve, reject) => {
-                this.client.post("users/lookup", params, function(error: any, result: any) {
-                    if (error) { reject(error); }
-                    resolve(result);
-                });
-            });
+        const doPost = async (params: twit.Params): Promise<Types.User[]> => {
+            const data = await this.client.post("users/lookup", params);
+            if (TwitTypes.isUsers(data)) {
+                return data;
+            } else {
+                console.error(data);
+                throw new Error("取得した値の形が変です");
+            }
         }
 
         let apiCallCount = 0;
@@ -63,22 +65,20 @@ export default class TwitterClient {
     }
 
     private async _getFriendsOrFollowersId(user: Types.UserType, friendsOrFollowers: boolean, cursor: string|null = null): Promise<{ids: string[]; nextCursor?: string}> {
-        return new Promise((resolve, reject) => {
-            const params: any = { stringify_ids: true };
-            if (cursor) { params.cursor = cursor; }
-            if (user.userId) { params.user_id = user.userId; }
-            else { params.screen_name = user.screenName; }
-            
-            const endpoint = friendsOrFollowers ? "friends/ids" : "followers/ids";
-            this.client.get(endpoint, params, function(error: any, result: any, response: any) {
-                if (!error) {
-                    if (result.next_cursor === 0) { resolve({ids: result.ids}); }
-                    else { resolve({ids: result.ids, nextCursor: result.next_cursor_str}); }
-                } else {
-                    reject(error);
-                }
-            });
-        }) as Promise<{ids: string[]; nextCursor?: string}>
+        const params: twit.Params = { stringify_ids: true };
+        if (cursor) { params.cursor = cursor; }
+        if (user.userId) { params.user_id = user.userId; }
+        else { params.screen_name = user.screenName; }
+        
+        const endpoint = friendsOrFollowers ? "friends/ids" : "followers/ids";
+        const result = await this.client.get(endpoint, params);
+        if (TwitTypes.isFriendsOrFollowersIdResultType(result)) {
+            if (result.next_cursor === 0) { return {ids: result.ids}; }
+            return {ids: result.ids, nextCursor: result.next_cursor_str}
+        } else {
+            console.error(result);
+            throw new Error("取得した値の形が変です");
+        }
     }
 
 
@@ -149,7 +149,7 @@ export default class TwitterClient {
      * @param condition sinceId, maxIdのいずれかを指定する。両方省略した場合は直近の200件が返される
      */
     async getTweets(timelineType: Types.TimeLineType, user: Types.UserType|null, condition: {sinceId?: string, maxId?: string}): Promise<Types.TweetEx[]> {
-        const params: any = {
+        const params: twit.Params = {
             count: 200,
             include_rts: true,
             exclude_replies: false,
@@ -171,16 +171,13 @@ export default class TwitterClient {
         }
         console.log(`TwitterClient#getTweets(): endpoint=${endpoint}, parameter=${JSON.stringify(params)}`);
 
-        return new Promise<Types.TweetEx[]>((resolve, reject) => {
-            this.client.get(endpoint, params, function(error: any, tweets: any /*TwitterTypes.Tweet[]*/, response: any) {
-                if (!error) {
-                    console.log(`...${tweets.length}件取得しました`);
-                    resolve(TwitterClient.alterTweet(tweets));
-                } else {
-                    reject(error);
-                }
-            });
-        });
+        const result = await this.client.get(endpoint, params);
+        if (TwitTypes.isTweets(result.data)) {
+            return TwitterClient.alterTweet(result.data);
+        } else {
+            console.error(result.data);
+            throw new Error("戻り値が変です");
+        }
     }
     
  
@@ -203,6 +200,9 @@ export default class TwitterClient {
         });
     }
 
+    /**
+     * 現在時刻を "2018-08-11T12:34:45+0900" 形式で取得する
+     */
     static getCurrentTime() {
         return moment().utcOffset(Config.tweetOption.utfOffset).format();
     }
