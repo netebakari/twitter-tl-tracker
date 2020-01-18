@@ -149,7 +149,7 @@ export default class TwitterClient {
      * @param user_id ユーザー。timelineTypeでHomeTimelineを選んだときは無視される
      * @param condition sinceId, maxIdのいずれかを指定する。両方省略した場合は直近の200件が返される
      */
-    async getTweets(timelineType: EnumTimelineType, user: Types.UserType|null, condition: {sinceId?: string, maxId?: string}): Promise<Types.TweetEx[]> {
+    async getTweets(timelineType: EnumTimelineType|"Home"|"UserTL"|"Favorites", user: Types.UserType|null, condition: {sinceId?: string, maxId?: string}): Promise<Types.TweetEx[]> {
         const params: any = {
             count: 200,
             include_rts: true,
@@ -165,8 +165,11 @@ export default class TwitterClient {
         let endpoint = "";
         switch(timelineType) {
             case EnumTimelineType.HomeTimeline: endpoint = "statuses/home_timeline"; break;
+            case "Home": endpoint = "statuses/home_timeline"; break;
             case EnumTimelineType.UserTimeline: endpoint = "statuses/user_timeline"; break;
+            case "UserTL": endpoint = "statuses/user_timeline"; break;
             case EnumTimelineType.Favorites: endpoint = "favorites/list"; break;
+            case "Favorites": endpoint = "favorites/list"; break;
         }
         console.log(`TwitterClient#getTweets(): endpoint=${endpoint}, parameter=${JSON.stringify(params)}`);
 
