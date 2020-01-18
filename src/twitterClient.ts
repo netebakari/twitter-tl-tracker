@@ -1,6 +1,5 @@
-const Twit = require("twit")
+import Twit, * as twit from "twit";
 import * as Types from "./types"
-import * as TwitterTypes from "./types/twit"
 import * as _ from "lodash";
 import * as Config from "./config"
 import moment from "moment"
@@ -12,8 +11,11 @@ enum EnumTimelineType {
 }
 
 export default class TwitterClient {
-    readonly client: any;
+    readonly client: Twit;
 
+    /**
+     * 唯一のコンストラクタ。環境変数からトークン等を読み込んでインスタンスを作成する
+     */
     constructor() {
         this.client = new Twit(Config.twitterToken);
     }
@@ -22,14 +24,14 @@ export default class TwitterClient {
      * users/lookup を叩いてユーザー情報を取得する
      * @param userIds ユーザーIDの配列。100件ごとにまとめてAPIがコールされる
      */
-    async lookupUsers(userIds: string[]): Promise<{apiCallCount: number, users: TwitterTypes.TwitterUser[]}> {
-        const doPost = async (params: any): Promise<TwitterTypes.TwitterUser[]> => {
+    async lookupUsers(userIds: string[]): Promise<{apiCallCount: number, users: Types.User[]}> {
+        const doPost = async (params: any): Promise<Types.User[]> => {
             return new Promise((resolve, reject) => {
                 this.client.post("users/lookup", params, function(error: any, result: any) {
                     if (error) { reject(error); }
                     resolve(result);
                 });
-            }) as Promise<TwitterTypes.TwitterUser[]>;
+            });
         }
 
         let apiCallCount = 0;
@@ -46,7 +48,7 @@ export default class TwitterClient {
 
     /**
      * あるユーザーのフォロワーまたはフォロイーのIDを取得する
-     * @param user screenNameまたはuserIdでユーザーを指定する。どちらかが必須。両方指定されていたらuserIdが優先される
+     * @param user ユーザー
      * @param friendsOrFollowers trueならフォロイー（フォローしている人）を、falseならフォロワーを取得する
      */
     async getFriendsOrFollowersIds(user: Types.UserType, friendsOrFollowers: boolean): Promise<string[]> {
@@ -69,7 +71,7 @@ export default class TwitterClient {
             else { throw new Error("either screenName or userId required");}
             
             const endpoint = friendsOrFollowers ? "friends/ids" : "followers/ids";
-            this.client.get(endpoint, params, function(error: any, result: TwitterTypes.FriendsFollowersIdResult, response: any) {
+            this.client.get(endpoint, params, function(error: any, result: any, response: any) {
                 if (!error) {
                     if (result.next_cursor === 0) { resolve({ids: result.ids}); }
                     else { resolve({ids: result.ids, nextCursor: result.next_cursor_str}); }
@@ -87,12 +89,12 @@ export default class TwitterClient {
      * 対象のユーザーのlikeを最大3200件取得する。
      * @param user_id ユーザー
      */
-    async getFavorites(user: Types.UserType): Promise<{apiCallCount: number, tweets: TwitterTypes.Tweet[]}> {
+    async getFavorites(user: Types.UserType): Promise<{apiCallCount: number, tweets: Types.Tweet[]}> {
         const firstChunk = await this.getTweets(EnumTimelineType.Favorites, user, {sinceId: "100"});
         if (firstChunk.length < 180) { return {apiCallCount: 1, tweets: firstChunk}; }
         let minimumId = TwitterClient.getMinimumId(firstChunk);
 
-        const chunks: TwitterTypes.Tweet[][] = [firstChunk];
+        const chunks: Types.Tweet[][] = [firstChunk];
         let apiCallCount = 1;
         for(let i = 0; i < 15; i++) {
             const chunk = await this.getTweets(EnumTimelineType.Favorites, user, {maxId: minimumId});
@@ -115,14 +117,14 @@ export default class TwitterClient {
      * @param user_id ユーザー。nullを指定するとホームタイムライン
      * @param sinceId これ以降
      */
-    async getRecentTweets(user: Types.UserType|null, sinceId: string): Promise<{apiCallCount: number, tweets: TwitterTypes.Tweet[]}> {
+    async getRecentTweets(user: Types.UserType|null, sinceId: string): Promise<{apiCallCount: number, tweets: Types.TweetEx[]}> {
         const timelieType = user === null ? EnumTimelineType.HomeTimeline : EnumTimelineType.UserTimeline;
         const firstChunk = await this.getTweets(timelieType, user, {sinceId: sinceId});
         if (firstChunk.length < 180) { return {apiCallCount: 1, tweets: firstChunk}; }
         let minimumId = TwitterClient.getMinimumId(firstChunk);
 
         const maxloopCount = user ? 15 : 3; // ホームタイムラインは最大800件まで。最初に1回取ったから3回ループする
-        const chunks: TwitterTypes.Tweet[][] = [firstChunk];
+        const chunks: Types.TweetEx[][] = [firstChunk];
         let apiCallCount = 1;
         for(let i = 0; i < maxloopCount; i++) {
             const chunk = await this.getTweets(timelieType, user, {maxId: minimumId});
@@ -136,7 +138,9 @@ export default class TwitterClient {
         }
 
         const tweets = _.flatten(chunks).filter(x => TwitterClient.compareNumber(x.id_str, sinceId) >= 0);
-        return {apiCallCount, tweets};
+        return {
+            apiCallCount, tweets
+        };
     }
 
     /**
@@ -145,7 +149,7 @@ export default class TwitterClient {
      * @param user_id ユーザー。timelineTypeでHomeTimelineを選んだときは無視される
      * @param condition sinceId, maxIdのいずれかを指定する。両方省略した場合は直近の200件が返される
      */
-    async getTweets(timelineType: EnumTimelineType, user: Types.UserType|null, condition: {sinceId?: string, maxId?: string}): Promise<TwitterTypes.Tweet[]> {
+    async getTweets(timelineType: EnumTimelineType, user: Types.UserType|null, condition: {sinceId?: string, maxId?: string}): Promise<Types.TweetEx[]> {
         const params: any = {
             count: 200,
             include_rts: true,
@@ -166,36 +170,40 @@ export default class TwitterClient {
         }
         console.log(`TwitterClient#getTweets(): endpoint=${endpoint}, parameter=${JSON.stringify(params)}`);
 
-        return new Promise((resolve, reject) => {
-            this.client.get(endpoint, params, function(error: any, tweets: TwitterTypes.Tweet[], response: any) {
+        return new Promise<Types.TweetEx[]>((resolve, reject) => {
+            this.client.get(endpoint, params, function(error: any, tweets: any /*TwitterTypes.Tweet[]*/, response: any) {
                 if (!error) {
                     console.log(`...${tweets.length}件取得しました`);
-                    const timestamp = moment().utcOffset(Config.tweetOption.utfOffset).format();
-                    tweets = tweets.map(x => TwitterClient.alterTweet(x, timestamp));
-                    resolve(tweets);
+                    resolve(TwitterClient.alterTweet(tweets));
                 } else {
                     reject(error);
                 }
             });
-        }) as Promise<TwitterTypes.Tweet[]>;
+        });
     }
     
  
     /**
      * ツイートを少し加工する。
-     * 1. idを削除（どうせオーバーフローして末尾がゼロになっているので意味なし）
-     * 2. timestampLocal（"2018-08-11T12:34:45+0900"形式）を追加
-     * 3. dateLocal("2018-08-11"形式)を追加
-     * 4. serverTimestamp（"2018-08-11T12:34:45+0900"形式）を追加。これは取得日時
+     * 1. timestampLocal（"2018-08-11T12:34:45+0900"形式）を追加
+     * 2. dateLocal("2018-08-11"形式)を追加
+     * 3. serverTimestamp（"2018-08-11T12:34:45+0900"形式）を追加。これは取得日時
      * @param tweet 
      */
-    static alterTweet(tweet: TwitterTypes.Tweet, serverTimestamp: string) {
-        delete tweet.id;
-        const timestamp = moment(new Date(tweet.created_at)).utcOffset(Config.tweetOption.utfOffset);
-        tweet.timestampLocal = timestamp.format();
-        tweet.dateLocal = timestamp.format("YYYY-MM-DD");
-        tweet.serverTimestamp = serverTimestamp;
-        return tweet;
+    static alterTweet(tweets: Types.Tweet[], serverTimestamp?: string): Types.TweetEx[] {
+        const _serverTimestamp = serverTimestamp || TwitterClient.getCurrentTime();
+        return tweets.map(tweet => {
+            const timestamp = moment(new Date(tweet.created_at)).utcOffset(Config.tweetOption.utfOffset);
+            return {...tweet, 
+                timestampLocal: timestamp.format(),
+                dateLocal: timestamp.format("YYYY-MM-DD"),
+                serverTimestamp: _serverTimestamp
+            };
+        });
+    }
+
+    static getCurrentTime() {
+        return moment().utcOffset(Config.tweetOption.utfOffset).format();
     }
 
     /**
@@ -215,7 +223,7 @@ export default class TwitterClient {
      * 与えられたツイートの中で最小のIDを取得
      * @param tweets 
      */
-    static getMinimumId(tweets: TwitterTypes.Tweet[]) {
+    static getMinimumId(tweets: Types.Tweet[]) {
         return tweets.map(x => x.id_str).reduce((prev, current) => TwitterClient.compareNumber(prev, current) < 0 ? prev : current);
     }
 
@@ -223,7 +231,7 @@ export default class TwitterClient {
      * 与えられたツイートの中で最大のIDを取得
      * @param tweets 
      */
-    static getMaxId(tweets: TwitterTypes.Tweet[]) {
+    static getMaxId(tweets: Types.Tweet[]) {
         return tweets.map(x => x.id_str).reduce((prev, current) => TwitterClient.compareNumber(prev, current) > 0 ? prev : current);
     }
 
@@ -244,10 +252,10 @@ export default class TwitterClient {
      * ツイートを dateLocal の値でグループ分けする
      * @param tweets ツイートの配列
      */
-    static groupByDate(tweets: TwitterTypes.Tweet[]) {
+    static groupByDate(tweets: Types.Tweet[]) {
         const grouped = _.groupBy(tweets, "dateLocal");
         const dates = Object.keys(grouped);
-        const result: {date: string, tweets: TwitterTypes.Tweet[]}[] = [];
+        const result: {date: string, tweets: Types.Tweet[]}[] = [];
         for(const date of dates) {
             result.push({date: date, tweets: grouped[date]})
         }

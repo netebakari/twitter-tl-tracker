@@ -9,7 +9,7 @@ import moment from "moment";
 const s3 = new AWS.S3({region: Config.s3.region});
 
 export default class S3Client {
-    async putUserTweets(tweets: TweetTypes.Tweet[]) {
+    async putUserTweets(tweets: Types.TweetEx[]) {
         for (const chunk of TwitterClient.groupByDate(tweets)) {
             const content = chunk.tweets.map(x => JSON.stringify(x)).join("\n");
             const now = moment().format("YYYYMMDD.HHmmss.SSS");
@@ -24,7 +24,7 @@ export default class S3Client {
         }
     }
 
-    async putTimelineTweets(tweets: TweetTypes.Tweet[]) {
+    async putTimelineTweets(tweets: Types.TweetEx[]) {
         for (const chunk of TwitterClient.groupByDate(tweets)) {
             const content = chunk.tweets.map(x => JSON.stringify(x)).join("\n");
             const now = moment().format("YYYYMMDD.HHmmss.SSS");
@@ -82,7 +82,7 @@ export default class S3Client {
      * S3のJSONを読み出してパースする。バケットはConfigで指定されたものを使う
      * @param keyName キー
      */
-    async getTweets(keyName: string): Promise<TweetTypes.Tweet[]> {
+    async getTweets(keyName: string): Promise<Types.TweetEx[]> {
         const data = await s3.getObject({
             Bucket: Config.s3.bucket,
             Key: keyName
@@ -99,7 +99,7 @@ export default class S3Client {
         throw new Error("wakannna-i");
     }
 
-    async putArchivedTweets(date: moment.Moment, tweets: TweetTypes.Tweet[]) {
+    async putArchivedTweets(date: moment.Moment, tweets: Types.TweetEx[]) {
         const keyName = `${Config.s3.dailyLogPrefix}${date.format("YYYY")}/${date.format("YYYY-MM")}/${date.format("YYYY-MM-DD")}.json`;
         console.log(`s3://${Config.s3.bucket}/${keyName}を保存します`);
         const content = tweets.map(x => JSON.stringify(x)).join("\n");

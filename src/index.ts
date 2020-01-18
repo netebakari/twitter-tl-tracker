@@ -66,7 +66,7 @@ exports.event = async (event: any, context: LambdaType.Context) => {
 const archive = async(date: moment.Moment) => {
     console.log(`${date.format("YYYY-MM-DD")}のログを処理します`);
     const keys = await s3.getFragments(date);
-    const allTweets: TwitterTypes.Tweet[] = [];
+    const allTweets: Types.TweetEx[] = [];
     const ids: string[] = [];
     console.log(moment());
     console.log(`ホームTLが${keys.homeTweets.length}件、ユーザーTLが${keys.userTweets.length}件見つかりました`);
@@ -156,7 +156,7 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
     const maxApiCallCount = timelimitInSec * 0.95;
 
     // 結果
-    const result: {tweets: TwitterTypes.Tweet[]; receiptHandle: string;}[] = [];
+    const result: {tweets: Types.TweetEx[]; receiptHandle: string;}[] = [];
 
     // 実行時間が設定時間に達するか、失敗回数が2回に達したか、API呼び出し回数が（設定時間×0.95）回になったらループ終了
     let totalApiCallCount = 0;
@@ -204,7 +204,7 @@ interface UserTweetsFetchResultType {
     isError: boolean;
     apiCallCount: number;
     tweetData?: {
-        tweets: TwitterTypes.Tweet[];
+        tweets: Types.TweetEx[];
         receiptHandle: string;
     }
 }

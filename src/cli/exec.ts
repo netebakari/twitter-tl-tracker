@@ -1,19 +1,11 @@
 /**
  * コマンドラインからの実行用
  */
+import TwitterClient from "../twitterClient";
+import * as env from "../env";
 
-const module1 = require("../index")
-
-const func1 = async (event: any) => {
-    try {
-        const result = await module1.handler(event);
-        console.log("OK!");
-        console.log(result);
-    }
-    catch (e) {
-        console.log("ERROR!");
-        console.log(e);
-    }
-};
-
-func1({});
+(async() => {
+    const client = new TwitterClient();
+    const myself = await client.lookupUsers([env.options_myUserIdStr]);
+    console.log(myself.users);
+})();
