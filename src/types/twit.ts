@@ -1,21 +1,38 @@
-import Twit, * as twit from "twit";
+import * as twit from "twit";
 
+/**
+ * 手抜き
+ * @param arg 
+ */
+export const isTweet = (arg: any): arg is twit.Twitter.Status => {
+    if (!arg) { return false; }
+    if (typeof(arg) !== "object") { return false; }
+    if (typeof(arg.id) !== "number") { return false; }
+    if (typeof(arg.id_str) !== "string") { return false; }
 
+    return true;
+}
 
-// export interface Tweet {
-//     created_at: string;
-//     id: number;
-//     id_str: string;
-//     full_text: string;
-//     truncated: boolean;
-//     user: TiwtterUser;
-//     is_quote_status: boolean;
-//     in_reply_to_status_id?: number;
-//     in_reply_to_status_id_str?: string;
-//     in_reply_to_user_id?: number;
-//     in_reply_to_user_id_str?: string;
-//     in_reply_to_screen_name?: string;
-//     timestampLocal: string;
-//     dateLocal: string;
-//     serverTimestamp: string;
-// }
+export const isTweets = (arg: any): arg is twit.Twitter.Status[] => {
+    if (!Array.isArray(arg)) { return false; }
+    return (arg.every(x => isTweet(x)));
+}
+
+/**
+ * 手抜き
+ * @param arg 
+ */
+export const isUser = (arg: any): arg is twit.Twitter.User => {
+    if (!arg) { return false; }
+    if (typeof(arg) !== "object") { return false; }
+    if (typeof(arg.id) !== "number") { return false; }
+    if (typeof(arg.id_str) !== "string") { return false; }
+    if (typeof(arg.name) !== "string") { return false; }
+
+    return true;
+}
+
+export const isUsers = (arg: any): arg is twit.Twitter.User[] => {
+    if (!Array.isArray(arg)) { return false; }
+    return (arg.every(x => isUser(x)));
+}
