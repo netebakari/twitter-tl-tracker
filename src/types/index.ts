@@ -1,18 +1,18 @@
 import * as TweetTypes from "./twit"
 
-export declare interface ConfigRecordType {
+export interface ConfigRecordType {
     Provider: string;
     lastId: string;
     screenNames: string[];
     keywords: string[];
 }
 
-export declare interface UserType {
+export interface UserType {
     screenName?: string;
     userId?: string
 }
 
-export declare interface UserOnDb {
+export interface UserOnDb {
     id_str: string;
     screenName: string;
     name: string;
@@ -24,7 +24,7 @@ export declare interface UserOnDb {
 /**
  * ツイート取得の戻り値
  */
-export declare interface TweetFetchResult {
+export interface TweetFetchResult {
     apiCallCount: number;
     tweets: TweetTypes.Tweet[];
 }
@@ -32,7 +32,7 @@ export declare interface TweetFetchResult {
 /**
  * フォロイー・フォロワーのIDリスト
  */
-export declare interface FriendsAndFollowersIdsType {
+export interface FriendsAndFollowersIdsType {
     friendsIds: string[];
     followersIds: string[];
 }

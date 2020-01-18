@@ -1,12 +1,12 @@
-export declare interface FriendsFollowersIdResult {
-    ids: Array<string>;
+export interface FriendsFollowersIdResult {
+    ids: string[];
     next_cursor: number;
     next_cursor_str: string;
     previous_cursor: number;
-    previous_cursor_str: string    
+    previous_cursor_str: string;
 }
 
-export declare interface Tweet {
+export interface Tweet {
     created_at: string;
     id: number;
     id_str: string;
@@ -23,7 +23,8 @@ export declare interface Tweet {
     dateLocal: string;
     serverTimestamp: string;
 }
-export declare interface TwitterUser {
+
+export interface TwitterUser {
     id: number;
     id_str: string;
     name: string;
