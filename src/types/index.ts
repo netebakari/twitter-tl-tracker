@@ -54,6 +54,7 @@ export interface FriendsFollowersIdResult {
     previous_cursor_str: string;
 }
 
+export type TimeLineType = "HomeTL"|"UserTL"|"Favorites";
 
 export type Tweet = twit.Twitter.Status;
 export interface TweetEx extends Tweet {

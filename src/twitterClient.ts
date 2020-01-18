@@ -67,8 +67,7 @@ export default class TwitterClient {
             const params: any = { stringify_ids: true };
             if (cursor) { params.cursor = cursor; }
             if (user.userId) { params.user_id = user.userId; }
-            else if (user.screenName) { params.screen_name = user.screenName; }
-            else { throw new Error("either screenName or userId required");}
+            else { params.screen_name = user.screenName; }
             
             const endpoint = friendsOrFollowers ? "friends/ids" : "followers/ids";
             this.client.get(endpoint, params, function(error: any, result: any, response: any) {
@@ -90,14 +89,14 @@ export default class TwitterClient {
      * @param user_id ユーザー
      */
     async getFavorites(user: Types.UserType): Promise<{apiCallCount: number, tweets: Types.Tweet[]}> {
-        const firstChunk = await this.getTweets(EnumTimelineType.Favorites, user, {sinceId: "100"});
+        const firstChunk = await this.getTweets("Favorites", user, {sinceId: "100"});
         if (firstChunk.length < 180) { return {apiCallCount: 1, tweets: firstChunk}; }
         let minimumId = TwitterClient.getMinimumId(firstChunk);
 
         const chunks: Types.Tweet[][] = [firstChunk];
         let apiCallCount = 1;
         for(let i = 0; i < 15; i++) {
-            const chunk = await this.getTweets(EnumTimelineType.Favorites, user, {maxId: minimumId});
+            const chunk = await this.getTweets("Favorites", user, {maxId: minimumId});
             apiCallCount++;
             chunks.push(chunk);
             if (chunk.length === 0) { break; }
@@ -118,7 +117,7 @@ export default class TwitterClient {
      * @param sinceId これ以降
      */
     async getRecentTweets(user: Types.UserType|null, sinceId: string): Promise<{apiCallCount: number, tweets: Types.TweetEx[]}> {
-        const timelieType = user === null ? EnumTimelineType.HomeTimeline : EnumTimelineType.UserTimeline;
+        const timelieType: Types.TimeLineType = (user === null) ? "HomeTL" : "UserTL";
         const firstChunk = await this.getTweets(timelieType, user, {sinceId: sinceId});
         if (firstChunk.length < 180) { return {apiCallCount: 1, tweets: firstChunk}; }
         let minimumId = TwitterClient.getMinimumId(firstChunk);
@@ -149,7 +148,7 @@ export default class TwitterClient {
      * @param user_id ユーザー。timelineTypeでHomeTimelineを選んだときは無視される
      * @param condition sinceId, maxIdのいずれかを指定する。両方省略した場合は直近の200件が返される
      */
-    async getTweets(timelineType: EnumTimelineType|"Home"|"UserTL"|"Favorites", user: Types.UserType|null, condition: {sinceId?: string, maxId?: string}): Promise<Types.TweetEx[]> {
+    async getTweets(timelineType: Types.TimeLineType, user: Types.UserType|null, condition: {sinceId?: string, maxId?: string}): Promise<Types.TweetEx[]> {
         const params: any = {
             count: 200,
             include_rts: true,
@@ -158,17 +157,16 @@ export default class TwitterClient {
         };
         if (condition.sinceId) { params.since_id = condition.sinceId; }
         if (condition.maxId) { params.max_id = condition.maxId; }
-        if (timelineType !== EnumTimelineType.HomeTimeline && user) { // ホームタイムライン以外の場合、userは非nullかつidかscreenNameに値ありと仮定
+        if (timelineType !== "HomeTL") {
+            // ホームタイムライン以外の場合、userは非nullでないとエラー
+            if (user === null) { throw new Error("UserTL and Favorits need user info"); }
             if (user.userId) { params.user_id = user.userId; }
-            if (user.screenName) { params.screen_name = user.screenName; }
+            else { params.screen_name = user.screenName; }
         }
         let endpoint = "";
         switch(timelineType) {
-            case EnumTimelineType.HomeTimeline: endpoint = "statuses/home_timeline"; break;
-            case "Home": endpoint = "statuses/home_timeline"; break;
-            case EnumTimelineType.UserTimeline: endpoint = "statuses/user_timeline"; break;
+            case "HomeTL": endpoint = "statuses/home_timeline"; break;
             case "UserTL": endpoint = "statuses/user_timeline"; break;
-            case EnumTimelineType.Favorites: endpoint = "favorites/list"; break;
             case "Favorites": endpoint = "favorites/list"; break;
         }
         console.log(`TwitterClient#getTweets(): endpoint=${endpoint}, parameter=${JSON.stringify(params)}`);
