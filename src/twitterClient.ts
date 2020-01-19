@@ -53,11 +53,12 @@ export default class TwitterClient {
      * @param user ユーザー
      * @param friendsOrFollowers trueならフォロイー（フォローしている人）を、falseならフォロワーを取得する
      */
-    async getFriendsOrFollowersIds(user: Types.UserType, friendsOrFollowers: boolean): Promise<string[]> {
+    async getFriendsOrFollowersIds(user: Types.UserType, friendsOrFollowers: boolean, maxApiCallCount = 100): Promise<string[]> {
         const result: Array<Array<string>> = [];
         let chunk = await this._getFriendsOrFollowersId(user, friendsOrFollowers);
         result.push(chunk.ids);
-        while(chunk.nextCursor) {
+        let apiCallCount = 1;
+        while(apiCallCount++ < maxApiCallCount && chunk.nextCursor) {
             chunk = await this._getFriendsOrFollowersId(user, friendsOrFollowers, chunk.nextCursor);
             result.push(chunk.ids);
         }
@@ -72,17 +73,14 @@ export default class TwitterClient {
         
         const endpoint = friendsOrFollowers ? "friends/ids" : "followers/ids";
         const result = await this.client.get(endpoint, params);
-        if (TwitTypes.isFriendsOrFollowersIdResultType(result)) {
-            if (result.next_cursor === 0) { return {ids: result.ids}; }
-            return {ids: result.ids, nextCursor: result.next_cursor_str}
+        if (TwitTypes.isFriendsOrFollowersIdResultType(result.data)) {
+            if (result.data.next_cursor === 0) { return {ids: result.data.ids}; }
+            return {ids: result.data.ids, nextCursor: result.data.next_cursor_str}
         } else {
             console.error(result);
             throw new Error("取得した値の形が変です");
         }
     }
-
-
-
 
     /**
      * 対象のユーザーのlikeを最大3200件取得する。
