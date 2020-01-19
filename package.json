@@ -4,12 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "user": "node dist/src/cli/userTimeline.js",
-    "home": "node dist/src/cli/homeTimeline.js",
+    "user": "node dist/src/cli/index.js user",
+    "home": "node dist/src/cli/index.js home",
     "start": "node dist/src/cli/exec.js",
-    "hourly": "node dist/src/cli/hourlyTask.js",
-    "snapshot": "node dist/src/cli/snapshot.js",
-    "archive": "node dist/src/cli/archive.js",
+    "hourly": "node dist/src/cli/index.js hourly",
+    "snapshot": "node dist/src/cli/index.js snapshot",
+    "archive": "node dist/src/cli/index.js archive",
     "build": "cd dist/src; zip -r ../../myFunc.zip *; cd ..; zip -r -u myFunc.zip node_modules/",
     "test": "npx mocha dist/test/test.js"
   },
