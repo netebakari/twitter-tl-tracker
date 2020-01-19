@@ -21,13 +21,24 @@ export type UserType = RequireOne<{
     userId?: string;
 }>;
 
-export interface UserOnDb {
+export const isUserOnDb = (arg: any): arg is UserOnDb => {
+    if (!arg) { return false; }
+    if (typeof(arg) !== "object") { return false; }
+    if (typeof(arg.id_str) !== "string") { return false; }
+    if (typeof(arg.screenName) !== "string") { return false; }
+    if (typeof(arg.sinceId) !== "string") { return false; }
+    if (typeof(arg.updatedAt) !== "string") { return false; }
+    if (arg.TTL !== undefined && typeof(arg.TTL) !== "number") { return false; }
+    return true;
+}
+
+export type UserOnDb = {
     id_str: string;
     screenName: string;
     name: string;
     sinceId: string;
     updatedAt: string;
-    TTL: number;
+    TTL?: number;
 }
 
 /**

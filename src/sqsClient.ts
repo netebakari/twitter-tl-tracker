@@ -4,7 +4,6 @@ import * as Types from "./types"
 const sqs = new AWS.SQS({region: Config.sqs.region});
 
 export default class SqsClient {
-    
     async send(userId: string) {
         const params = {
             MessageBody: userId,
@@ -32,7 +31,7 @@ export default class SqsClient {
             QueueUrl: Config.sqs.queueUrl,
             ReceiptHandle: receiptHandle
         }
-        const data = await sqs.deleteMessage (params).promise();
+        return sqs.deleteMessage (params).promise();
     }
 
     /**
