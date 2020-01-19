@@ -54,7 +54,7 @@ export default class TwitterClient {
      * @param friendsOrFollowers trueならフォロイー（フォローしている人）を、falseならフォロワーを取得する
      */
     async getFriendsOrFollowersIds(user: Types.UserType, friendsOrFollowers: boolean, maxApiCallCount = 100): Promise<string[]> {
-        const result: Array<Array<string>> = [];
+        const result: string[][] = [];
         let chunk = await this._getFriendsOrFollowersId(user, friendsOrFollowers);
         result.push(chunk.ids);
         let apiCallCount = 1;

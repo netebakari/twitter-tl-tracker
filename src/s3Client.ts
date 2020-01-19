@@ -57,8 +57,8 @@ export default class S3Client {
      */
     async getFragments(date: moment.Moment) {
         const dateStr = date.format("YYYY-MM-DD");
-        const userTweets = await this.getAllObjects(`raw/user/${date}/`);
-        const homeTweets = await this.getAllObjects(`raw/home/${date}/`);
+        const userTweets = await this.getAllObjects(`raw/user/${dateStr}/`);
+        const homeTweets = await this.getAllObjects(`raw/home/${dateStr}/`);
         return {userTweets, homeTweets};
     }
 
@@ -147,50 +147,57 @@ export default class S3Client {
      * 前回保存したフォロイー・フォロワーのIDデータを取得する。見つからなければnullが返される
      */
     async getLatestFriendFollowerIds() {
-        try {
-            const key = "raw/ff/latest.json";
-            const data = await s3.getObject({
-                Bucket: Config.s3.bucket,
-                Key: key
-            }).promise();
-
-            // data.Bodyは実際にはstringかBuffer
-            let body = "";
-            if (typeof(data.Body) === "string") { body = data.Body; }
-            if (Buffer.isBuffer(data.Body)) { body = data.Body.toString("utf8"); }
-
-            try {
-                const parsed = JSON.parse(body);
-                if (Types.isFriendsAndFollowersIdsType(parsed)) {
-                    return parsed;
-                } else {
-                    console.error(`S3にデータは見つかりましたが形式が変です: s3://${Config.s3.bucket}/${key}`);
-                    return null;
-                }
-            } catch(e) {
-                console.error(e);
-                console.error(`S3にデータは見つかりましたがJSONとしてパースできません: s3://${Config.s3.bucket}/${key}`);
-                return null;
-            }
-        } catch(e) {
-            return null;
-        }
+        return this.getContent("raw/ff/latest.json", Types.isFriendsAndFollowersIdsType);
     }
 
     /**
      * 前回保存したいいねのツイートのIDのリストを取得する。見つからなければnullが返される
      */
     async getLatestFavoriteTweetIds() {
+        return this.getContent<string[]>("raw/event/favorites/latest.json");
+    }
+
+    /**
+     * S3（バケットは環境変数で与えられたもの固定）からJSONデータを取得し、パースして返す。
+     * データが見つからなかったとき、型チェックに通らなかったときはnullを返す
+     * @param key 
+     * @param typeGuardFunction 
+     */
+    protected async getContent<T>(key: string, typeGuardFunction?: (arg: any) => arg is T) {
+        let body = "";
         try {
             const data = await s3.getObject({
                 Bucket: Config.s3.bucket,
-                Key: `raw/event/favorites/latest.json`
+                Key: key
             }).promise();
-            if (typeof(data.Body) === "string") { return JSON.parse(data.Body) as string[]; }
-            if (Buffer.isBuffer(data)) { return JSON.parse(data.toString("utf8")) as string[]; }
+            // data.Bodyは実際にはstringかBuffer
+            if (typeof(data.Body) === "string") { body = data.Body; }
+            if (Buffer.isBuffer(data.Body)) { body = data.Body.toString("utf8"); }
         } catch(e) {
+            console.error(e);
+            console.error(`s3://${Config.s3.bucket}/${key} not found`);
+            return null;
         }
-        return null;
+
+        let data: any = undefined;
+        try {
+            data = JSON.parse(body);
+        } catch(e) {
+            console.error(e);
+            console.error(`s3://${Config.s3.bucket}/${key} is not a json`);
+            return null;
+        }
+
+        if (typeGuardFunction) {
+            if (typeGuardFunction(data)) {
+                return data;
+            } else {
+                console.error(`s3://${Config.s3.bucket}/${key} did'nt satisfy provided type guard function`)
+                return null;
+            }
+        } else {
+            return data as T;
+        }
     }
 }
 

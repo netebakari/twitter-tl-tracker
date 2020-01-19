@@ -128,8 +128,8 @@ exports.hourlyTask = async (event: any, context: LambdaType.Context) => {
  * ホームタイムラインを取得し、S3に保存する
  */
 exports.homeTimeline = async (event: any, context: LambdaType.Context) => {
-    const user = await dynamo.getTimelineRecord();
-    const sinceId = user ? user.sinceId : TwitterClient.getStatusId(Config.tweetOption.daysToArchive - 1);
+    const myself = await dynamo.getTimelineRecord();
+    const sinceId = myself ? myself.sinceId : TwitterClient.getStatusId(Config.tweetOption.daysToArchive - 1);
     console.log(`ホームタイムラインを取得します。 sinceId=${sinceId}`);
     const {tweets} = await twitter.getRecentTweets(null, sinceId);
 
