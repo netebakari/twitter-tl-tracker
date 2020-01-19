@@ -38,6 +38,16 @@ export interface TweetFetchResult {
     tweets: twit.Twitter.Status[];
 }
 
+export const isFriendsAndFollowersIdsType = (arg: any): arg is FriendsAndFollowersIdsType => {
+    if (!arg) { return false; }
+    if (typeof(arg) !== "object") { return false; }
+    if (!Array.isArray(arg.friendsIds)) { return false; }
+    if (!arg.friendsIds.every((x: any) => typeof(x) == "string")) { return false; }
+    if (!Array.isArray(arg.followersIds)) { return false; }
+    if (!arg.followersIds.every((x: any) => typeof(x) == "string")) { return false; }
+    return true;
+}
+
 /**
  * フォロイー・フォロワーのIDリスト
  */

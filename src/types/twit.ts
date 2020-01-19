@@ -43,6 +43,7 @@ export const isFriendsOrFollowersIdResultType = (arg: any): arg is FriendsOrFoll
     if (!Array.isArray(arg.ids)) { return false; }
     return true;
 }
+
 export type FriendsOrFollowersIdResultType = {
     ids: string[];
     next_cursor: number;

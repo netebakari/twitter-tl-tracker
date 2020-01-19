@@ -141,11 +141,28 @@ export default class S3Client {
                 Bucket: Config.s3.bucket,
                 Key: `${Config.s3.fragmentKeyPrefix}event/ff/latest.json`
             }).promise();
-            if (typeof(data.Body) === "string") { return JSON.parse(data.Body) as Types.FriendsAndFollowersIdsType; }
-            if (Buffer.isBuffer(data)) { return JSON.parse(data.toString("utf-8")) as Types.FriendsAndFollowersIdsType; }
+
+            // data.Bodyは実際にはstringかBuffer
+            let body = "";
+            if (typeof(data.Body) === "string") { body = data.Body; }
+            if (Buffer.isBuffer(data.Body)) { body = data.Body.toString("utf8"); }
+
+            try {
+                const parsed = JSON.parse(body);
+                if (Types.isFriendsAndFollowersIdsType(parsed)) {
+                    return parsed;
+                } else {
+                    console.error(`S3にデータは見つかりましたが形式が変です: ${Config.s3.fragmentKeyPrefix}event/ff/latest.json`);
+                    return null;
+                }
+            } catch(e) {
+                console.error(e);
+                console.error(`S3にデータは見つかりましたがJSONとしてパースできません: ${Config.s3.fragmentKeyPrefix}event/ff/latest.json`);
+                return null;
+            }
         } catch(e) {
+            return null;
         }
-        return null;
     }
 
     /**
