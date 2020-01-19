@@ -82,6 +82,12 @@ describe("type guard functions", () => {
       const data = JSON.parse(buffer.toString("utf8"));
       assert.equal(TwitTypes.isTweet(data), true);
     });
-    
+
+    it("test2", () => {
+      const buffer = fs.readFileSync("test/fixtures/tweet2.json");
+      const data = JSON.parse(buffer.toString("utf8"));
+      assert.equal(TwitTypes.isTweet(data), true);
+    });
+
   })
 });
