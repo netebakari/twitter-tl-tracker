@@ -3,6 +3,7 @@ import * as myModule from "../src/index"
 import * as mocha from "mocha";
 import * as Types from "../src/types";
 import * as TwitTypes from "../src/types/twit";
+import * as fs from "fs";
 
 describe("type guard functions", () => {
   describe("isUserOnDb", () => {
@@ -75,5 +76,12 @@ describe("type guard functions", () => {
     });
   });
 
-  
+  describe("isTweet", () => {
+    it("test1", () => {
+      const buffer = fs.readFileSync("test/fixtures/tweet1.json");
+      const data = JSON.parse(buffer.toString("utf8"));
+      assert.equal(TwitTypes.isTweet(data), true);
+    });
+    
+  })
 });
