@@ -1,12 +1,9 @@
 import * as AWS from "aws-sdk"
-import * as LambdaType from 'aws-lambda'
 import * as Types from "./types"
-import * as TwitterTypes from "./types/twit"
 import * as _ from "lodash";
 import * as Config from "./config"
 import moment from "moment";
 const dynamoClient = new AWS.DynamoDB.DocumentClient({region: Config.dynamoDb.region, convertEmptyValues: true});
-const dynamo = new AWS.DynamoDB({region: Config.dynamoDb.region});
 
 export default class DynamoDbClient {
     /**
@@ -21,11 +18,14 @@ export default class DynamoDbClient {
      */
     async updateTImelineRecord(sinceId: string) {
         const now = moment().utcOffset(Config.tweetOption.utfOffset);
-        return dynamoClient.put({TableName: Config.dynamoDb.tableName, Item: {
+        const record: Types.UserOnDb = {
             id_str: "TIMELINE",
+            name: "*My Timeline*",
+            screenName: "*My Timeline*",
             sinceId: sinceId,
-            updatedAt: now.format(),
-        }}).promise();
+            updatedAt: now.format()
+        };
+        return dynamoClient.put({TableName: Config.dynamoDb.tableName, Item: record}).promise();
     }
 
     /**
@@ -41,8 +41,15 @@ export default class DynamoDbClient {
         if (!data || !Array.isArray(data.Items) || data.Items.length === 0) {
             return null;
         }
-    
-        return data.Items[0] as Types.UserOnDb;
+
+        const found = data.Items[0];
+        if (Types.isUserOnDb(found)) {
+            return found;
+        } else {
+            console.error("DynamoDB record found but type guard function returns false");
+            console.error(JSON.stringify(found));
+            return null;
+        }
     }
 
     /**
@@ -51,13 +58,14 @@ export default class DynamoDbClient {
     async putUser(id_str: string, screenName: string, name: string, sinceId: string) {
         const now = moment().utcOffset(Config.tweetOption.utfOffset);
         const ttl = +now.format("X") + Config.dynamoDb.ttlInDays*24*3600;
-        return dynamoClient.put({TableName: Config.dynamoDb.tableName, Item: {
+        const record: Types.UserOnDb = {
             id_str: id_str,
             screenName: screenName,
             name: name,
             sinceId: sinceId,
             updatedAt: now.format(),
             TTL: ttl
-        }}).promise();
+        };
+        return dynamoClient.put({TableName: Config.dynamoDb.tableName, Item: record}).promise();
     }
 }

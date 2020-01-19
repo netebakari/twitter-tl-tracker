@@ -2,17 +2,15 @@ import * as LambdaType from 'aws-lambda'
 import * as Config from "./config"
 import * as TwitterTypes from "./types/twit"
 import * as Types from "./types"
-import TwitterClient from "./twitterClient"
+import * as twitter from "./twitterClient"
 import DynamoDbClient from "./dynamoDbClient"
-import SQSClient from "./sqsClient"
-import S3Client from "./s3Client"
+import * as sqs from "./sqs"
+import * as s3 from "./s3"
+import * as util from "./util";
 import _ from "lodash"
-import moment from 'moment';
+import moment from 'moment'
 
-const twitter = new TwitterClient();
 const dynamo = new DynamoDbClient();
-const sqs = new SQSClient();
-const s3 = new S3Client();
 
 /**
  * entry point
@@ -66,7 +64,7 @@ exports.event = async (event: any, context: LambdaType.Context) => {
 const archive = async(date: moment.Moment) => {
     console.log(`${date.format("YYYY-MM-DD")}のログを処理します`);
     const keys = await s3.getFragments(date);
-    const allTweets: TwitterTypes.Tweet[] = [];
+    const allTweets: Types.TweetEx[] = [];
     const ids: string[] = [];
     console.log(moment());
     console.log(`ホームTLが${keys.homeTweets.length}件、ユーザーTLが${keys.userTweets.length}件見つかりました`);
@@ -93,7 +91,7 @@ const archive = async(date: moment.Moment) => {
     }
 
     console.log("マージが終わりました。ソートします");
-    allTweets.sort((a, b) => TwitterClient.compareNumber(a.id_str, b.id_str));
+    allTweets.sort((a, b) => util.compareNumber(a.id_str, b.id_str));
     console.log("ソートが終わりました。アップロードします");
     await s3.putArchivedTweets(date, allTweets);
     return true;
@@ -128,14 +126,14 @@ exports.hourlyTask = async (event: any, context: LambdaType.Context) => {
  * ホームタイムラインを取得し、S3に保存する
  */
 exports.homeTimeline = async (event: any, context: LambdaType.Context) => {
-    const user = await dynamo.getTimelineRecord();
-    const sinceId = user ? user.sinceId : TwitterClient.getStatusId(Config.tweetOption.daysToArchive - 1);
+    const myself = await dynamo.getTimelineRecord();
+    const sinceId = myself ? myself.sinceId : util.getStatusId(Config.tweetOption.daysToArchive - 1);
     console.log(`ホームタイムラインを取得します。 sinceId=${sinceId}`);
     const {tweets} = await twitter.getRecentTweets(null, sinceId);
 
     if (tweets.length > 0) {
-        const minId = TwitterClient.getMinimumId(tweets);
-        const maxId = TwitterClient.getMaxId(tweets);
+        const minId = util.getMinimumId(tweets);
+        const maxId = util.getMaxId(tweets);
         console.log(`${minId}から${maxId}までを取得しました`);
         await s3.putTimelineTweets(tweets);
         await dynamo.updateTImelineRecord(maxId);
@@ -156,7 +154,7 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
     const maxApiCallCount = timelimitInSec * 0.95;
 
     // 結果
-    const result: {tweets: TwitterTypes.Tweet[]; receiptHandle: string;}[] = [];
+    const result: {tweets: Types.TweetEx[]; receiptHandle: string;}[] = [];
 
     // 実行時間が設定時間に達するか、失敗回数が2回に達したか、API呼び出し回数が（設定時間×0.95）回になったらループ終了
     let totalApiCallCount = 0;
@@ -183,7 +181,7 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
     console.log("DynamoDBを更新します");
     for(const userId of userIds) {
         const userTweets = tweets.filter(x => x.user.id_str === userId);
-        const maxId = TwitterClient.getMaxId(userTweets);
+        const maxId = util.getMaxId(userTweets);
         const user = userTweets[0].user;
         console.log(`@${user.screen_name}(id=${user.id_str})のsinceIdを${maxId}に更新します`);
         await dynamo.putUser(userId, user.screen_name, user.name, maxId);
@@ -204,7 +202,7 @@ interface UserTweetsFetchResultType {
     isError: boolean;
     apiCallCount: number;
     tweetData?: {
-        tweets: TwitterTypes.Tweet[];
+        tweets: Types.TweetEx[];
         receiptHandle: string;
     }
 }
@@ -229,7 +227,7 @@ const processSingleQueueMessage = async () : Promise<UserTweetsFetchResultType> 
 
         if (user === null) {
             // SQSにはあったけどDynamoDBには未登録。指定された日数分（上限3200件）を全部取得
-            sinceId = TwitterClient.getStatusId(Config.tweetOption.daysToArchive - 1);
+            sinceId = util.getStatusId(Config.tweetOption.daysToArchive - 1);
             console.log(`ユーザーテーブルに存在しないユーザーでした。${Config.tweetOption.daysToArchive - 1}日前の0:00以降=${sinceId}以降を取得します`);
         } else {
             sinceId = user.sinceId;

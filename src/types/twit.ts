@@ -1,39 +1,55 @@
-export declare interface FriendsFollowersIdResult {
-    ids: Array<string>;
+import * as twit from "twit";
+
+/**
+ * 手抜き
+ * @param arg 
+ */
+export const isTweet = (arg: any): arg is twit.Twitter.Status => {
+    if (!arg) { return false; }
+    if (typeof(arg) !== "object") { return false; }
+    if (typeof(arg.id) !== "number") { return false; }
+    if (typeof(arg.id_str) !== "string") { return false; }
+
+    return true;
+}
+
+export const isTweets = (arg: any): arg is twit.Twitter.Status[] => {
+    if (!Array.isArray(arg)) { return false; }
+    return (arg.every(x => isTweet(x)));
+}
+
+/**
+ * 手抜き
+ * @param arg 
+ */
+export const isUser = (arg: any): arg is twit.Twitter.User => {
+    if (!arg) { return false; }
+    if (typeof(arg) !== "object") { return false; }
+    if (typeof(arg.id) !== "number") { return false; }
+    if (typeof(arg.id_str) !== "string") { return false; }
+    if (typeof(arg.name) !== "string") { return false; }
+
+    return true;
+}
+
+export const isUsers = (arg: any): arg is twit.Twitter.User[] => {
+    if (!Array.isArray(arg)) { return false; }
+    return (arg.every(x => isUser(x)));
+}
+
+export const isFriendsOrFollowersIdResultType = (arg: any): arg is FriendsOrFollowersIdResultType => {
+    if (!arg) { return false; }
+    if (typeof(arg) !== "object") { return false; }
+    if (!Array.isArray(arg.ids)) { return false; }
+    return true;
+}
+
+export type FriendsOrFollowersIdResultType = {
+    ids: string[];
     next_cursor: number;
     next_cursor_str: string;
     previous_cursor: number;
-    previous_cursor_str: string    
-}
+    previous_cursor_str: string;
+    total_count: null|number;
+};
 
-export declare interface Tweet {
-    created_at: string;
-    id: number;
-    id_str: string;
-    full_text: string;
-    truncated: boolean;
-    user: TwitterUser;
-    is_quote_status: boolean;
-    in_reply_to_status_id?: number;
-    in_reply_to_status_id_str?: string;
-    in_reply_to_user_id?: number;
-    in_reply_to_user_id_str?: string;
-    in_reply_to_screen_name?: string;
-    timestampLocal: string;
-    dateLocal: string;
-    serverTimestamp: string;
-}
-export declare interface TwitterUser {
-    id: number;
-    id_str: string;
-    name: string;
-    screen_name: string;
-    location: string;
-    description: string;
-    url: string;
-    //entities: [Object],
-    protected: boolean;
-    followers_count: number;
-    friends_count: number;
-    listed_count: number;
-}
