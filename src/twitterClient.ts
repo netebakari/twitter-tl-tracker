@@ -249,9 +249,9 @@ export default class TwitterClient {
 
     /**
      * ツイートを dateLocal の値でグループ分けする
-     * @param tweets ツイートの配列
+     * @param tweets ツイートの配列。キーはツイートの日付（YYYY-MM-DD形式）
      */
-    static groupByDate(tweets: Types.Tweet[]) {
+    static groupByDate(tweets: Types.TweetEx[]) {
         const grouped = _.groupBy(tweets, "dateLocal");
         const dates = Object.keys(grouped);
         const result: {date: string, tweets: Types.Tweet[]}[] = [];

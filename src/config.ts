@@ -28,9 +28,7 @@ export const sqs = {
 
 export const s3 = {
     region: env.s3_region,
-    bucket: env.s3_bucket,
-    fragmentKeyPrefix: env.s3_fragmentKeyPrefix,
-    dailyLogPrefix: env.s3_dailyLogPrefix
+    bucket: env.s3_bucket
 };
 
 export const tweetOption = {

@@ -21,8 +21,6 @@ const sqs_region                    = getEnv("sqs_region");
 const sqs_queueUrl                  = getEnv("sqs_queueUrl");
 const s3_region                     = getEnv("s3_region");
 const s3_bucket                     = getEnv("s3_bucket");
-const s3_fragmentKeyPrefix          = getEnv("s3_fragmentKeyPrefix");
-const s3_dailyLogPrefix             = getEnv("s3_dailyLogPrefix");
 const options_daysToArchive         = getEnv("options_daysToArchive");
 const options_includeFollowers      = getEnv("options_includeFollowers");
 const options_utfOffset             = getEnv("options_utfOffset");
@@ -41,8 +39,6 @@ export {
     sqs_queueUrl,
     s3_region,
     s3_bucket,
-    s3_fragmentKeyPrefix,
-    s3_dailyLogPrefix,
     options_daysToArchive,
     options_includeFollowers,
     options_utfOffset,

@@ -69,6 +69,9 @@ export type TimeLineType = "HomeTL"|"UserTL"|"Favorites";
 export type Tweet = twit.Twitter.Status;
 export interface TweetEx extends Tweet {
     timestampLocal: string;
+    /**
+     * ツイートのタイムスタンプ（日本時間）。YYYY-MM-DD形式（タイムゾーンの情報はなくなる）
+     */
     dateLocal: string;
     serverTimestamp: string;
 }

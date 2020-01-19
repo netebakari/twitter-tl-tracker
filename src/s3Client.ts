@@ -9,11 +9,18 @@ import moment from "moment";
 const s3 = new AWS.S3({region: Config.s3.region});
 
 export default class S3Client {
+    /**
+     * 特定のユーザーのツイートを保存する。ツイートは日付ごとにグループ分けして次のキーで保存する。
+     * raw/user/YYYY-MM-DD/YYYYMMDD.HHmmss.SSS_9999999999.json
+     * （前半の日付はツイートの日付、後半のタムスタンプは現在日時。単に重複しないユニークな値として利用している）
+     * @param tweets 
+     */
     async putUserTweets(tweets: Types.TweetEx[]) {
         for (const chunk of TwitterClient.groupByDate(tweets)) {
             const content = chunk.tweets.map(x => JSON.stringify(x)).join("\n");
             const now = moment().format("YYYYMMDD.HHmmss.SSS");
-            const keyName = `${Config.s3.fragmentKeyPrefix}${chunk.date}/USERv2_${now}.json`
+            const userId = chunk.tweets[0].user.id_str;
+            const keyName = `raw/user/${chunk.date}/${now}_${userId}.json`
             console.log(`s3://${Config.s3.bucket}/${keyName}を保存します`);
             await s3.putObject({
                 Body: content,
@@ -24,11 +31,16 @@ export default class S3Client {
         }
     }
 
+    /**
+     * ホームタイムラインのツイートを保存する。ツイートは日付ごとにグループ分けして次のキーで保存する。
+     * raw/home/YYYY-MM-DD/YYYYMMDD.HHmmss.SSS.json
+     * @param tweets 
+     */
     async putTimelineTweets(tweets: Types.TweetEx[]) {
         for (const chunk of TwitterClient.groupByDate(tweets)) {
             const content = chunk.tweets.map(x => JSON.stringify(x)).join("\n");
             const now = moment().format("YYYYMMDD.HHmmss.SSS");
-            const keyName = `${Config.s3.fragmentKeyPrefix}${chunk.date}/TIMELINEv2_${now}.json`
+            const keyName = `raw/home/${chunk.date}/${now}.json`
             console.log(`s3://${Config.s3.bucket}/${keyName}を保存します`);
             await s3.putObject({
                 Body: content,
@@ -44,10 +56,9 @@ export default class S3Client {
      * @param date 
      */
     async getFragments(date: moment.Moment) {
-        const keyPrefix = `${Config.s3.fragmentKeyPrefix}${date.format("YYYY-MM-DD")}`;
-
-        const userTweets = await this.getAllObjects(`${keyPrefix}/USERv2_`);
-        const homeTweets = await this.getAllObjects(`${keyPrefix}/TIMELINEv2_`);
+        const dateStr = date.format("YYYY-MM-DD");
+        const userTweets = await this.getAllObjects(`raw/user/${date}/`);
+        const homeTweets = await this.getAllObjects(`raw/home/${date}/`);
         return {userTweets, homeTweets};
     }
 
@@ -100,7 +111,7 @@ export default class S3Client {
     }
 
     async putArchivedTweets(date: moment.Moment, tweets: Types.TweetEx[]) {
-        const keyName = `${Config.s3.dailyLogPrefix}${date.format("YYYY")}/${date.format("YYYY-MM")}/${date.format("YYYY-MM-DD")}.json`;
+        const keyName = `archive/${date.format("YYYY")}/${date.format("YYYY-MM")}/${date.format("YYYY-MM-DD")}.json`;
         console.log(`s3://${Config.s3.bucket}/${keyName}を保存します`);
         const content = tweets.map(x => JSON.stringify(x)).join("\n");
         await s3.putObject({
@@ -118,14 +129,14 @@ export default class S3Client {
     async putFriendAndFollowerIds(timestamp: moment.Moment, ids: Types.FriendsAndFollowersIdsType) {
         await s3.putObject({
             Bucket: Config.s3.bucket,
-            Key: `${Config.s3.fragmentKeyPrefix}ff/latest.json`,
+            Key: `raw/ff/latest.json`,
             Body: JSON.stringify(ids),
             ContentType: "application/json; charset=utf-8"
         }).promise();
 
         await s3.putObject({
             Bucket: Config.s3.bucket,
-            Key: `${Config.s3.fragmentKeyPrefix}ff/FF_${timestamp.format("YYYY-MM-DD_HHmm")}.json`,
+            Key: `raw/ff/FF_${timestamp.format("YYYY-MM-DD_HHmm")}.json`,
             Body: JSON.stringify(ids),
             ContentType: "application/json; charset=utf-8"
         }).promise();
@@ -137,9 +148,10 @@ export default class S3Client {
      */
     async getLatestFriendFollowerIds() {
         try {
+            const key = "raw/ff/latest.json";
             const data = await s3.getObject({
                 Bucket: Config.s3.bucket,
-                Key: `${Config.s3.fragmentKeyPrefix}event/ff/latest.json`
+                Key: key
             }).promise();
 
             // data.Bodyは実際にはstringかBuffer
@@ -152,12 +164,12 @@ export default class S3Client {
                 if (Types.isFriendsAndFollowersIdsType(parsed)) {
                     return parsed;
                 } else {
-                    console.error(`S3にデータは見つかりましたが形式が変です: ${Config.s3.fragmentKeyPrefix}event/ff/latest.json`);
+                    console.error(`S3にデータは見つかりましたが形式が変です: s3://${Config.s3.bucket}/${key}`);
                     return null;
                 }
             } catch(e) {
                 console.error(e);
-                console.error(`S3にデータは見つかりましたがJSONとしてパースできません: ${Config.s3.fragmentKeyPrefix}event/ff/latest.json`);
+                console.error(`S3にデータは見つかりましたがJSONとしてパースできません: s3://${Config.s3.bucket}/${key}`);
                 return null;
             }
         } catch(e) {
@@ -172,10 +184,10 @@ export default class S3Client {
         try {
             const data = await s3.getObject({
                 Bucket: Config.s3.bucket,
-                Key: `${Config.s3.fragmentKeyPrefix}event/favorites/latest.json`
+                Key: `raw/event/favorites/latest.json`
             }).promise();
             if (typeof(data.Body) === "string") { return JSON.parse(data.Body) as string[]; }
-            if (Buffer.isBuffer(data)) { return JSON.parse(data.toString("utf-8")) as string[]; }
+            if (Buffer.isBuffer(data)) { return JSON.parse(data.toString("utf8")) as string[]; }
         } catch(e) {
         }
         return null;
