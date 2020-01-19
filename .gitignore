@@ -1,3 +1,6 @@
+# test
+src/cli/exec.ts
+
 # built deploy package
 *.zip
 
