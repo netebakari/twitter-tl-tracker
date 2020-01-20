@@ -43,7 +43,6 @@ const s3_bucket                     = getEnv("s3_bucket");
 const options_daysToArchive         = getEnvAsInteger("options_daysToArchive");
 const options_includeFollowers      = getEnvAsBoolean("options_includeFollowers");
 const options_utfOffset             = getEnvAsInteger("options_utfOffset");
-const options_executeTimeInSeconds  = getEnvAsInteger("options_executeTimeInSeconds");
 const options_myUserIdStr           = getEnv("options_myUserIdStr");
 
 
@@ -74,6 +73,5 @@ export const tweetOption = {
     daysToArchive: options_daysToArchive,
     includeFollowers: options_includeFollowers,
     utfOffset: options_utfOffset,
-    executeTimeInSeconds: options_executeTimeInSeconds,
     myUserIdStr: options_myUserIdStr
 };
