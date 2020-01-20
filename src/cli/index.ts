@@ -3,6 +3,7 @@
  */
 import * as env from "../env";
 const _module = require("../index");
+const event = {};
 
 (async() => {
     switch(process.argv[2]) {
