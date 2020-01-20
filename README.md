@@ -31,27 +31,18 @@ UserStreamが死んでしまったので少なくともそれと同等のツイ�
 **未実装。** 1と3が吐いた全てのファイルを結合し、ソートして重複を排除して1個のファイルに書き出す
 
 # ツイート保存先
-* ホームTLは `/fragments/2018-08-20/TIMELINEv2_20180820.063923.920.json` のような名前
-* ユーザーTLは `/fragments/2018-08-20/USERv2_20180820.071617.530.json` のような名前
+* ホームTLは `s3://YOUR-BUCKET-NAME/raw/2020-01-20/20200120.074634.845.json` のような名前
+* ユーザーTLは `s3://YOUR-BUCKET-NAME/raw/user/2020-01-20/20200120.032328.128_859217111108829184.json` のような名前
 
 # インストール
 ## 1. TwitterのAPIキーを取得
-頑張ってください……
+頑張ってください。
 
 ## 2. ビルド
 ```
 git clone https://github.com/netebakari/twitter-tl-tracker.git
 cd twitter-tl-tracker
-npm install
-npx tsc
-```
-
-ビルドが通ったことを確認したら、不要なモジュールを除去した上でデプロイパッケージを作る。（この辺はどうやるのが正道なのかよく分からない……）
-
-```
-rm -rf node_modules/
-npm install --production
-npm run build
+./build.sh
 ```
 
 これで `myFunc.zip` が生成される。
@@ -60,7 +51,7 @@ npm run build
 作ったパッケージをS3の適当な場所にアップロードしておく。
 
 ```
-aws s3 cp myFunc.zip s3://your-bucket/tracker.zip
+aws s3 cp myFunc.zip s3://YOUR-BUCKET-NAME/myFunc.zip
 ```
 
 ## 4. CloudFormationを実行
@@ -69,6 +60,8 @@ AWSのコンソールから操作する。
 https://ap-northeast-1.console.aws.amazon.com/cloudformation/
 
 Create Stackから `cloudformation.yaml` をアップロードしてStackを作成する。設定しなくてはいけないパラメーターがいっぱいある。
+
+※作業中。このままでは実行できないので適宜Lambdaに環境変数を加えること
 
 <table>
   <thead>
@@ -151,12 +144,9 @@ Lambdaに割り当てるためのロール。最低限必要な権限だけを�
 * ログを取るためだけのものに出したくない気持ち
 
 ## マージ処理を書け
-Lambdaでやるのは無理な気がしてきた
+やる
 
 # Todo
-* ツイートのマージ処理
-  * S3 Selectが複数オブジェクトに対応してくれれば……
 * likeの定期取得＆差分抽出
 * フォロワー＆フォロイーの定期取得＆差分抽出
   * UserStreamのEvent通知の代わりにしたい
-
