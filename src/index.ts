@@ -1,6 +1,5 @@
 import * as LambdaType from 'aws-lambda'
-import * as Config from "./config"
-import * as TwitterTypes from "./types/twit"
+import * as env from "./env";
 import * as Types from "./types"
 import * as twitter from "./twitterClient"
 import DynamoDbClient from "./dynamoDbClient"
@@ -26,7 +25,7 @@ exports.archive = async (event: any, context: LambdaType.Context) => {
     console.log("処理開始");
 
     // 引数 daysToBack で指定されていたらその日数だけ戻る（0なら当日、1なら1日前など）。指定がなかったら設定値
-    const daysToBack = +event.daysToBack || Config.tweetOption.daysToArchive;
+    const daysToBack = +event.daysToBack || env.tweetOption.daysToArchive;
 }
 
 /**
@@ -34,8 +33,8 @@ exports.archive = async (event: any, context: LambdaType.Context) => {
  */
 exports.event = async (event: any, context: LambdaType.Context) => {
     // 現在のf/fを取得（IDのみ）
-    const friendsIds = await twitter.getFriendsOrFollowersIds({userId: Config.tweetOption.myUserIdStr}, true);
-    const followersIds = await twitter.getFriendsOrFollowersIds({userId: Config.tweetOption.myUserIdStr}, false);
+    const friendsIds = await twitter.getFriendsOrFollowersIds({userId: env.tweetOption.myUserIdStr}, true);
+    const followersIds = await twitter.getFriendsOrFollowersIds({userId: env.tweetOption.myUserIdStr}, false);
 
     // S3に保存しておいた最後のf/fを取得（IDのみ）
     const latest = await s3.getLatestFriendFollowerIds() || {friendsIds, followersIds}; // 初回実行時は差分なしと判定される
@@ -53,7 +52,7 @@ exports.event = async (event: any, context: LambdaType.Context) => {
         
     }
 
-    const now = moment().utcOffset(Config.tweetOption.utfOffset);
+    const now = moment().utcOffset(env.tweetOption.utfOffset);
     //await s3.putFriendAndFollowerIds(now, {friendsIds, followersIds});
 }
 
@@ -109,7 +108,7 @@ exports.hourlyTask = async (event: any, context: LambdaType.Context) => {
     }
 
     let ids: string[] = [];
-    const followeeIds = await twitter.getFriendsOrFollowersIds({userId: Config.tweetOption.myUserIdStr}, true);
+    const followeeIds = await twitter.getFriendsOrFollowersIds({userId: env.tweetOption.myUserIdStr}, true);
     while(messageCount + ids.length < 3600) {
         ids = _.flatten([ids, followeeIds]);
     }
@@ -127,7 +126,7 @@ exports.hourlyTask = async (event: any, context: LambdaType.Context) => {
  */
 exports.homeTimeline = async (event: any, context: LambdaType.Context) => {
     const myself = await dynamo.getTimelineRecord();
-    const sinceId = myself ? myself.sinceId : util.getStatusId(Config.tweetOption.daysToArchive - 1);
+    const sinceId = myself ? myself.sinceId : util.getStatusId(env.tweetOption.daysToArchive - 1);
     console.log(`ホームタイムラインを取得します。 sinceId=${sinceId}`);
     const {tweets} = await twitter.getRecentTweets(null, sinceId);
 
@@ -150,7 +149,7 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
     const startTimeInMillis = new Date().getTime();
 
     // 制限時間・回数
-    const timelimitInSec = Config.tweetOption.executeTimeInSeconds;
+    const timelimitInSec = env.tweetOption.executeTimeInSeconds;
     const maxApiCallCount = timelimitInSec * 0.95;
 
     // 結果
@@ -227,8 +226,8 @@ const processSingleQueueMessage = async () : Promise<UserTweetsFetchResultType> 
 
         if (user === null) {
             // SQSにはあったけどDynamoDBには未登録。指定された日数分（上限3200件）を全部取得
-            sinceId = util.getStatusId(Config.tweetOption.daysToArchive - 1);
-            console.log(`ユーザーテーブルに存在しないユーザーでした。${Config.tweetOption.daysToArchive - 1}日前の0:00以降=${sinceId}以降を取得します`);
+            sinceId = util.getStatusId(env.tweetOption.daysToArchive - 1);
+            console.log(`ユーザーテーブルに存在しないユーザーでした。${env.tweetOption.daysToArchive - 1}日前の0:00以降=${sinceId}以降を取得します`);
         } else {
             sinceId = user.sinceId;
             console.log(`ユーザーテーブルからレコードを見つけました。 ${sinceId}以降を取得します`);

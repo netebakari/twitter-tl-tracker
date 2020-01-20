@@ -1,12 +1,12 @@
 import * as AWS from "aws-sdk"
-import * as Config from "./config"
+import * as env from "./env"
 import * as Types from "./types"
 import * as TweetTypes from "./types/twit"
 import * as _ from "lodash"
 import moment from "moment";
 import * as util from "./util"
 
-const s3 = new AWS.S3({region: Config.s3.region});
+const s3 = new AWS.S3({region: env.s3.region});
 
 /**
  * 特定のユーザーのツイートを保存する。ツイートは日付ごとにグループ分けして次のキーで保存する。
@@ -20,10 +20,10 @@ export const putUserTweets = async (tweets: Types.TweetEx[]) => {
         const now = moment().format("YYYYMMDD.HHmmss.SSS");
         const userId = chunk.tweets[0].user.id_str;
         const keyName = `raw/user/${chunk.date}/${now}_${userId}.json`
-        console.log(`s3://${Config.s3.bucket}/${keyName}を保存します`);
+        console.log(`s3://${env.s3.bucket}/${keyName}を保存します`);
         await s3.putObject({
             Body: content,
-            Bucket: Config.s3.bucket,
+            Bucket: env.s3.bucket,
             Key: keyName,
             ContentType: "application/json; charset=utf-8"
         }).promise();
@@ -41,10 +41,10 @@ export const putTimelineTweets = async (tweets: Types.TweetEx[]) => {
         const content = chunk.tweets.map(x => JSON.stringify(x)).join("\n");
         const now = moment().format("YYYYMMDD.HHmmss.SSS");
         const keyName = `raw/home/${chunk.date}/${now}.json`
-        console.log(`s3://${Config.s3.bucket}/${keyName}を保存します`);
+        console.log(`s3://${env.s3.bucket}/${keyName}を保存します`);
         await s3.putObject({
             Body: content,
-            Bucket: Config.s3.bucket,
+            Bucket: env.s3.bucket,
             Key: keyName,
             ContentType: "application/json; charset=utf-8"
         }).promise();
@@ -65,7 +65,7 @@ export const getFragments = async (date: moment.Moment) => {
 export const getAllObjects = async (keyPrefix: string) => {
     console.log(`keyPrefix='${keyPrefix}' のオブジェクトを検索します`);
     const firstChunk = await s3.listObjectsV2({
-        Bucket: Config.s3.bucket,
+        Bucket: env.s3.bucket,
         Prefix: keyPrefix
     }).promise();
     if (!firstChunk.Contents) { return []; }
@@ -76,7 +76,7 @@ export const getAllObjects = async (keyPrefix: string) => {
     while (continueToken) {
         //console.log(`検索します: continueToken=${continueToken}`);
         const chunk = await s3.listObjectsV2({
-            Bucket: Config.s3.bucket,
+            Bucket: env.s3.bucket,
             Prefix: keyPrefix,
             ContinuationToken: continueToken
         }).promise();
@@ -95,7 +95,7 @@ export const getAllObjects = async (keyPrefix: string) => {
  */
 export const getTweets = async (keyName: string): Promise<Types.TweetEx[]> => {
     const data = await s3.getObject({
-        Bucket: Config.s3.bucket,
+        Bucket: env.s3.bucket,
         Key: keyName
     }).promise();
 
@@ -112,11 +112,11 @@ export const getTweets = async (keyName: string): Promise<Types.TweetEx[]> => {
 
 export const putArchivedTweets = async (date: moment.Moment, tweets: Types.TweetEx[]) => {
     const keyName = `archive/${date.format("YYYY")}/${date.format("YYYY-MM")}/${date.format("YYYY-MM-DD")}.json`;
-    console.log(`s3://${Config.s3.bucket}/${keyName}を保存します`);
+    console.log(`s3://${env.s3.bucket}/${keyName}を保存します`);
     const content = tweets.map(x => JSON.stringify(x)).join("\n");
     await s3.putObject({
         Body: content,
-        Bucket: Config.s3.bucket,
+        Bucket: env.s3.bucket,
         Key: keyName,
         ContentType: "application/json; charset=utf-8"
     }).promise();
@@ -128,14 +128,14 @@ export const putArchivedTweets = async (date: moment.Moment, tweets: Types.Tweet
  */
 export const putFriendAndFollowerIds = async (timestamp: moment.Moment, ids: Types.FriendsAndFollowersIdsType) => {
     await s3.putObject({
-        Bucket: Config.s3.bucket,
+        Bucket: env.s3.bucket,
         Key: `raw/ff/latest.json`,
         Body: JSON.stringify(ids),
         ContentType: "application/json; charset=utf-8"
     }).promise();
 
     await s3.putObject({
-        Bucket: Config.s3.bucket,
+        Bucket: env.s3.bucket,
         Key: `raw/ff/FF_${timestamp.format("YYYY-MM-DD_HHmm")}.json`,
         Body: JSON.stringify(ids),
         ContentType: "application/json; charset=utf-8"
@@ -167,7 +167,7 @@ async function getContent<T>(key: string, typeGuardFunction?: (arg: any) => arg 
     let body = "";
     try {
         const data = await s3.getObject({
-            Bucket: Config.s3.bucket,
+            Bucket: env.s3.bucket,
             Key: key
         }).promise();
         // data.Bodyは実際にはstringかBuffer
@@ -175,7 +175,7 @@ async function getContent<T>(key: string, typeGuardFunction?: (arg: any) => arg 
         if (Buffer.isBuffer(data.Body)) { body = data.Body.toString("utf8"); }
     } catch(e) {
         console.error(e);
-        console.error(`s3://${Config.s3.bucket}/${key} not found`);
+        console.error(`s3://${env.s3.bucket}/${key} not found`);
         return null;
     }
 
@@ -184,7 +184,7 @@ async function getContent<T>(key: string, typeGuardFunction?: (arg: any) => arg 
         data = JSON.parse(body);
     } catch(e) {
         console.error(e);
-        console.error(`s3://${Config.s3.bucket}/${key} is not a json`);
+        console.error(`s3://${env.s3.bucket}/${key} is not a json`);
         return null;
     }
 
@@ -192,7 +192,7 @@ async function getContent<T>(key: string, typeGuardFunction?: (arg: any) => arg 
         if (typeGuardFunction(data)) {
             return data;
         } else {
-            console.error(`s3://${Config.s3.bucket}/${key} did'nt satisfy provided type guard function`)
+            console.error(`s3://${env.s3.bucket}/${key} did'nt satisfy provided type guard function`)
             return null;
         }
     } else {

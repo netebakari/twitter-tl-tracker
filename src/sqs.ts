@@ -1,11 +1,11 @@
 import * as AWS from "aws-sdk"
-import * as Config from "./config"
-const sqs = new AWS.SQS({ region: Config.sqs.region });
+import * as env from "./env"
+const sqs = new AWS.SQS({ region: env.sqs.region });
 
 export const send = async (userId: string) => {
     const params = {
         MessageBody: userId,
-        QueueUrl: Config.sqs.queueUrl
+        QueueUrl: env.sqs.queueUrl
     };
 
     return sqs.sendMessage(params).promise();
@@ -13,7 +13,7 @@ export const send = async (userId: string) => {
 
 export const receiveMessage = async () => {
     const params = {
-        QueueUrl: Config.sqs.queueUrl,
+        QueueUrl: env.sqs.queueUrl,
         MaxNumberOfMessages: 1
     }
     const data = await sqs.receiveMessage(params).promise();
@@ -26,7 +26,7 @@ export const receiveMessage = async () => {
 
 export const deleteMessage = async (receiptHandle: string) => {
     const params = {
-        QueueUrl: Config.sqs.queueUrl,
+        QueueUrl: env.sqs.queueUrl,
         ReceiptHandle: receiptHandle
     }
     return sqs.deleteMessage(params).promise();
@@ -37,7 +37,7 @@ export const deleteMessage = async (receiptHandle: string) => {
  */
 export const getMessageCount = async () => {
     const params = {
-        QueueUrl: Config.sqs.queueUrl,
+        QueueUrl: env.sqs.queueUrl,
         AttributeNames: ["ApproximateNumberOfMessages"]
     };
 

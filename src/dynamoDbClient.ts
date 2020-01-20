@@ -1,9 +1,9 @@
 import * as AWS from "aws-sdk"
 import * as Types from "./types"
+import * as env from "./env";
 import * as _ from "lodash";
-import * as Config from "./config"
 import moment from "moment";
-const dynamoClient = new AWS.DynamoDB.DocumentClient({region: Config.dynamoDb.region, convertEmptyValues: true});
+const dynamoClient = new AWS.DynamoDB.DocumentClient({region: env.dynamoDb.region, convertEmptyValues: true});
 
 export default class DynamoDbClient {
     /**
@@ -17,7 +17,7 @@ export default class DynamoDbClient {
      * タイムラインのsinceIdを保存しているレコード（id_strは"TIMELINE"固定）を更新する。TTLは付けない
      */
     async updateTImelineRecord(sinceId: string) {
-        const now = moment().utcOffset(Config.tweetOption.utfOffset);
+        const now = moment().utcOffset(env.tweetOption.utfOffset);
         const record: Types.UserOnDb = {
             id_str: "TIMELINE",
             name: "*My Timeline*",
@@ -25,7 +25,7 @@ export default class DynamoDbClient {
             sinceId: sinceId,
             updatedAt: now.format()
         };
-        return dynamoClient.put({TableName: Config.dynamoDb.tableName, Item: record}).promise();
+        return dynamoClient.put({TableName: env.dynamoDb.tableName, Item: record}).promise();
     }
 
     /**
@@ -33,7 +33,7 @@ export default class DynamoDbClient {
      */
     async getUserById(id_str: string) {
         const data = await dynamoClient.query({
-            TableName: Config.dynamoDb.tableName,
+            TableName: env.dynamoDb.tableName,
             KeyConditionExpression: "id_str = :val",
             ExpressionAttributeValues: {':val': id_str }
         }).promise();
@@ -56,8 +56,8 @@ export default class DynamoDbClient {
      * ユーザーのレコードを更新する。設定されたTTLを付与する
      */
     async putUser(id_str: string, screenName: string, name: string, sinceId: string) {
-        const now = moment().utcOffset(Config.tweetOption.utfOffset);
-        const ttl = +now.format("X") + Config.dynamoDb.ttlInDays*24*3600;
+        const now = moment().utcOffset(env.tweetOption.utfOffset);
+        const ttl = +now.format("X") + env.dynamoDb.ttlInDays*24*3600;
         const record: Types.UserOnDb = {
             id_str: id_str,
             screenName: screenName,
@@ -66,6 +66,6 @@ export default class DynamoDbClient {
             updatedAt: now.format(),
             TTL: ttl
         };
-        return dynamoClient.put({TableName: Config.dynamoDb.tableName, Item: record}).promise();
+        return dynamoClient.put({TableName: env.dynamoDb.tableName, Item: record}).promise();
     }
 }

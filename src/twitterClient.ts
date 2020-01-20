@@ -2,11 +2,11 @@ import Twit, * as twit from "twit";
 import * as Types from "./types"
 import * as TwitTypes from "./types/twit"
 import * as _ from "lodash";
-import * as Config from "./config"
+import * as env from "./env"
 import moment from "moment"
 import * as util from "./util";
 
-const client = new Twit(Config.twitterToken);
+const client = new Twit(env.twitterToken);
 
 /**
  * users/lookup を叩いてユーザー情報を取得する
@@ -176,7 +176,7 @@ export const getTweets = async (timelineType: Types.TimeLineType, user: Types.Us
 const alterTweet = (tweets: Types.Tweet[], serverTimestamp?: string): Types.TweetEx[] => {
     const _serverTimestamp = serverTimestamp || util.getCurrentTime();
     return tweets.map(tweet => {
-        const timestamp = moment(new Date(tweet.created_at)).utcOffset(Config.tweetOption.utfOffset);
+        const timestamp = moment(new Date(tweet.created_at)).utcOffset(env.tweetOption.utfOffset);
         return {...tweet, 
             timestampLocal: timestamp.format(),
             dateLocal: timestamp.format("YYYY-MM-DD"),

@@ -1,13 +1,13 @@
 import moment from "moment";
-import * as Config from "./config";
+import * as env from "./env";
 import * as Types from "./types";
 import * as _ from "lodash";
 
 /**
- * 現在時刻を "2018-08-11T12:34:45+0900" 形式で取得する
+ * 現在時刻を "2018-08-11T12:34:45+0900" 形式で取得する（環境変数のutfOffsetを反映する）
  */
 export const getCurrentTime = () => {
-    return moment().utcOffset(Config.tweetOption.utfOffset).format();
+    return moment().utcOffset(env.tweetOption.utfOffset).format();
 };
 
 /**
@@ -15,7 +15,7 @@ export const getCurrentTime = () => {
  * @param daysCount 何日遡るか。0なら当日
  */
 export const getStatusId = (daysCount: number) => {
-    const now = moment().utcOffset(Config.tweetOption.utfOffset);
+    const now = moment().utcOffset(env.tweetOption.utfOffset);
     const cinderellaTime = moment(`${now.format("YYYY-MM-DD")}T00:00:00+09:00`); // 今日の0時0分のUnixTime
     const unixTime = +cinderellaTime.format("X") - daysCount * 24 * 3600; // 求める日の0時0分のUnixTime
     const time = unixTime - 1288834974.657; // マジックナンバーを引く
