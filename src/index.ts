@@ -2,14 +2,12 @@ import * as LambdaType from 'aws-lambda'
 import * as env from "./env";
 import * as Types from "./types"
 import * as twitter from "./twitterClient"
-import DynamoDbClient from "./dynamoDbClient"
+import * as dynamo from "./dynamodb"
 import * as sqs from "./sqs"
 import * as s3 from "./s3"
 import * as util from "./util";
 import _ from "lodash"
 import moment from 'moment'
-
-const dynamo = new DynamoDbClient();
 
 /**
  * entry point
