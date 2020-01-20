@@ -2,14 +2,12 @@ import * as LambdaType from 'aws-lambda'
 import * as env from "./env";
 import * as Types from "./types"
 import * as twitter from "./twitterClient"
-import DynamoDbClient from "./dynamoDbClient"
+import * as dynamo from "./dynamodb"
 import * as sqs from "./sqs"
 import * as s3 from "./s3"
 import * as util from "./util";
 import _ from "lodash"
 import moment from 'moment'
-
-const dynamo = new DynamoDbClient();
 
 /**
  * entry point
@@ -149,19 +147,23 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
     const startTimeInMillis = new Date().getTime();
 
     // 制限時間・回数
-    const timelimitInSec = env.tweetOption.executeTimeInSeconds;
+    const timelimitInSec = Math.floor(context.getRemainingTimeInMillis() / 1000);
     const maxApiCallCount = timelimitInSec * 0.95;
 
     // 結果
     const result: {tweets: Types.TweetEx[]; receiptHandle: string;}[] = [];
 
-    // 実行時間が設定時間に達するか、失敗回数が2回に達したか、API呼び出し回数が（設定時間×0.95）回になったらループ終了
+    // 実行時間が(設定時間-3秒)に達するか、失敗回数が2回に達したか、API呼び出し回数が（設定時間×0.95）回になったらループ終了
     let totalApiCallCount = 0;
     let totalFailCount = 0;
     let loopCount = 1;
-    while(totalApiCallCount <= maxApiCallCount && totalFailCount < 2 && (new Date().getTime() - startTimeInMillis) <= timelimitInSec*1000) {
+    while(totalApiCallCount <= maxApiCallCount && totalFailCount < 2 && (context.getRemainingTimeInMillis() > 3000)) {
         console.log(`ループ${loopCount++}回目... API呼び出し回数: ${totalApiCallCount}, エラー: ${totalFailCount}）, 経過ミリ秒=${new Date().getTime() - startTimeInMillis}`);
         const chunk = await processSingleQueueMessage();
+        if (chunk.apiCallCount === 0) {
+            // キューが空だった
+            break;
+        }
         totalApiCallCount += chunk.apiCallCount;
         if (chunk.tweetData) {
             // ここに来た時点で必ず1件はツイートがある
