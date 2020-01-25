@@ -10,7 +10,6 @@
     "hourly": "node dist/src/cli/index.js hourly",
     "snapshot": "node dist/src/cli/index.js snapshot",
     "archive": "node dist/src/cli/index.js archive",
-    "build": "cd dist/src; zip -r ../../myFunc.zip *; cd ..; zip -r -u myFunc.zip node_modules/",
     "test": "npx mocha dist/test/test.js"
   },
   "repository": {

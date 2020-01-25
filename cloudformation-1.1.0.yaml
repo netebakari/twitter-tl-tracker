@@ -20,12 +20,12 @@ Parameters:
 
   # deploy package location
   UploadedPackageBucketName:
-    Default: "your-bucket-name"
+    Default: netebakari
     AllowedPattern: '^[a-z0-9\-_\.]+$'
     Description: Your S3 Bucket Name
     Type: String
   UploadedPackageKeyName:
-    Default: ""
+    Default: twitter-timeline-tracker/timeline-tracker-1.1.0.zip
     Description: Path to uploaded deploy package
     Type: String
 
@@ -177,7 +177,7 @@ Resources:
               - "s3:PutObject"
               - "s3:ListBucket"
             Resource:
-              - !Sub arn:aws:s3:::${S3BucketName}/fragments/*
+              - !Sub arn:aws:s3:::${S3BucketName}/*
               - !Sub arn:aws:s3:::${S3BucketName}
       Roles:
         - !Ref IAMRoleForLambda
@@ -200,17 +200,14 @@ Resources:
           sqs_queueUrl: !Sub https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${QueueName}
           s3_region: !Sub ${AWS::Region}
           s3_bucket: !Sub ${S3BucketName}
-          s3_fragmentKeyPrefix: "fragments/"
-          s3_dailyLogPrefix: "tweets/"
           options_daysToArchive: 4
           options_includeFollowers: !Sub ${IncludeFollowers}
           options_utfOffset: !Sub ${UtfOffsetInHours}
-          options_executeTimeInSeconds: 240
           options_myUserIdStr: !Sub ${TwitterUserId}
       Handler: "index.homeTimeline"
       MemorySize: 256
       Role: !GetAtt IAMRoleForLambda.Arn
-      Runtime: nodejs8.10
+      Runtime: nodejs12.x
       Timeout: 55
       Code:
         S3Bucket: !Sub ${UploadedPackageBucketName}
@@ -219,7 +216,7 @@ Resources:
   LambdaQueueFillter:
     Type: 'AWS::Lambda::Function'
     Properties:
-      FunctionName: Twitter-TL-Tracker-QueueFillter
+      FunctionName: Twitter-TL-Tracker-QueueFiller
       Description: '[Twitter-TL-Tracker] スケジューラー'
       Environment:
         Variables:
@@ -234,17 +231,14 @@ Resources:
           sqs_queueUrl: !Sub https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${QueueName}
           s3_region: !Sub ${AWS::Region}
           s3_bucket: !Sub ${S3BucketName}
-          s3_fragmentKeyPrefix: "fragments/"
-          s3_dailyLogPrefix: "tweets/"
           options_daysToArchive: 4
           options_includeFollowers: !Sub ${IncludeFollowers}
           options_utfOffset: !Sub ${UtfOffsetInHours}
-          options_executeTimeInSeconds: 180
           options_myUserIdStr: !Sub ${TwitterUserId}
       Handler: "index.hourlyTask"
       MemorySize: 128
       Role: !GetAtt IAMRoleForLambda.Arn
-      Runtime: nodejs8.10
+      Runtime: nodejs12.x
       Timeout: 120
       Code:
         S3Bucket: !Sub ${UploadedPackageBucketName}
@@ -254,7 +248,7 @@ Resources:
     Type: 'AWS::Lambda::Function'
     Properties:
       FunctionName: Twitter-TL-Tracker-userTL
-      Description: '[Twitter-TL-Tracker] ユーザーID取得'
+      Description: '[Twitter-TL-Tracker] ユーザーTL取得'
       Environment:
         Variables:
           twitter_consumer_key: !Sub ${ConsumerKey}
@@ -268,17 +262,14 @@ Resources:
           sqs_queueUrl: !Sub https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${QueueName}
           s3_region: !Sub ${AWS::Region}
           s3_bucket: !Sub ${S3BucketName}
-          s3_fragmentKeyPrefix: "fragments/"
-          s3_dailyLogPrefix: "tweets/"
           options_daysToArchive: 4
           options_includeFollowers: !Sub ${IncludeFollowers}
           options_utfOffset: !Sub ${UtfOffsetInHours}
-          options_executeTimeInSeconds: 180
           options_myUserIdStr: !Sub ${TwitterUserId}
       Handler: "index.userTL"
       MemorySize: 320
       Role: !GetAtt IAMRoleForLambda.Arn
-      Runtime: nodejs8.10
+      Runtime: nodejs12.x
       Timeout: 240
       Code:
         S3Bucket: !Sub ${UploadedPackageBucketName}

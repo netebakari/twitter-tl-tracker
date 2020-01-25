@@ -10,7 +10,7 @@ UserStreamが死んでしまったので少なくともそれと同等のツイ�
 サーバーレス。全ての処理はLambdaが行い、結果はS3に保存する。
 
 # 処理概要＆構成
-定周期実行されるLambdaが3つある。
+Lambda3つで構成してある。
 
 ## 1. ホームTL取得Lambda
 * ホームTLをLambdaで1～2分ごとに1回取得し、S3に格納する
@@ -38,31 +38,31 @@ UserStreamが死んでしまったので少なくともそれと同等のツイ�
 ## 1. TwitterのAPIキーを取得
 頑張ってください。
 
-## 2. ビルド
+## 2. ビルド＆アップロード
+自分でやりたい人向け。使うだけの人はステップ3にスキップ。
+
 ```
 git clone https://github.com/netebakari/twitter-tl-tracker.git
 cd twitter-tl-tracker
 ./build.sh
 ```
 
-これで `myFunc.zip` が生成される。
-
-## 3. S3にアップロード
-作ったパッケージをS3の適当な場所にアップロードしておく。
+これで `timeline-tracker-1.1.0.zip` が生成されるのでS3の適当な場所にアップロードしておく。
 
 ```
 aws s3 cp myFunc.zip s3://YOUR-BUCKET-NAME/myFunc.zip
 ```
 
-## 4. CloudFormationを実行
-AWSのコンソールから操作する。
+## 3. CloudFormationを実行
+AWSのコンソールから操作する。東京リージョンでなくてもいい。
 
 https://ap-northeast-1.console.aws.amazon.com/cloudformation/
 
-Create Stackから `cloudformation.yaml` をアップロードしてStackを作成する。設定しなくてはいけないパラメーターがいっぱいある。
+テンプレートの指定 > テンプレートソース に次のURLを入力する。
 
-※作業中。このままでは実行できないので適宜Lambdaに環境変数を加えること
+https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/cloudformation-1.1.0.yaml
 
+設定するパラメーターは次の通り。
 <table>
   <thead>
     <tr><th>名前</th><th>内容</th></tr>
@@ -80,9 +80,9 @@ Create Stackから `cloudformation.yaml` をアップロードしてStackを作�
     <tr><th>S3BucketName</th><td>ツイートのログを保存するS3のバケット名</td></tr>
     <tr><th>TTLinDays</th><td>DynamoDBのTTL（日数。3なら72時間）</td></tr>
     <tr><th>TwitterUserId</th><td>自分のTwitterユーザーID。スクリーンネームではないので注意</td></tr>
-    <tr><th>UploadedPackageBucketName</th><td>パッケージ(.zip)をアップロードしたS3のバケット名</td></tr>
-    <tr><th>UploadedPackageKeyName</th><td>パッケージ(.zip)のキー名</td></tr>
-    <tr><th>UtfOffsetInHours</th><td>見た通り。日本時間なら9。くたばれ夏時間</td></tr>
+    <tr><th>UploadedPackageBucketName</th><td>パッケージ(.zip)をアップロードしたS3のバケット名（デフォルト値でよい）</td></tr>
+    <tr><th>UploadedPackageKeyName</th><td>パッケージ(.zip)のキー名（デフォルト値でよい）</td></tr>
+    <tr><th>UtfOffsetInHours</th><td>日本時間なら9</td></tr>
   </tboby>
 </table>
 
