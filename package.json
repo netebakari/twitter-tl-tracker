@@ -4,13 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "user": "node dist/cli/userTimeline.js",
-    "home": "node dist/cli/homeTimeline.js",
-    "start": "node dist/cli/exec.js",
-    "hourly": "node dist/cli/hourlyTask.js",
-    "archive": "node dist/cli/archive.js",
-    "build": "cd dist; zip -r ../myFunc.zip *; cd ..; zip -r -u myFunc.zip node_modules/",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "user": "node dist/src/cli/index.js user",
+    "home": "node dist/src/cli/index.js home",
+    "start": "node dist/src/cli/exec.js",
+    "hourly": "node dist/src/cli/index.js hourly",
+    "snapshot": "node dist/src/cli/index.js snapshot",
+    "archive": "node dist/src/cli/index.js archive",
+    "test": "npx mocha dist/test/test.js"
   },
   "repository": {
     "type": "git",
@@ -23,17 +23,21 @@
   },
   "homepage": "https://github.com/netebakari/twitter-tl-tracker#readme",
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.11",
+    "@types/aws-lambda": "^8.10.39",
     "@types/aws-sdk": "^2.7.0",
-    "@types/lodash": "^4.14.116",
+    "@types/lodash": "^4.14.149",
+    "@types/mocha": "^5.2.7",
     "@types/moment": "^2.13.0",
-    "@types/node": "^10.5.7",
-    "typescript": "^3.0.1",
-    "aws-sdk": "^2.288.0"
+    "@types/node": "^13.1.7",
+    "@types/twit": "^2.2.23",
+    "aws-sdk": "^2.603.0",
+    "mocha": "^7.0.0",
+    "typescript": "^3.7.4"
   },
   "dependencies": {
-    "lodash": "^4.17.10",
-    "moment": "^2.22.2",
+    "dotenv": "^8.2.0",
+    "lodash": "^4.17.15",
+    "moment": "^2.24.0",
     "twit": "^2.2.11"
   }
 }

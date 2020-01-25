@@ -10,7 +10,7 @@ UserStreamが死んでしまったので少なくともそれと同等のツイ�
 サーバーレス。全ての処理はLambdaが行い、結果はS3に保存する。
 
 # 処理概要＆構成
-定周期実行されるLambdaが3つある。
+Lambda3つで構成してある。
 
 ## 1. ホームTL取得Lambda
 * ホームTLをLambdaで1～2分ごとに1回取得し、S3に格納する
@@ -31,45 +31,38 @@ UserStreamが死んでしまったので少なくともそれと同等のツイ�
 **未実装。** 1と3が吐いた全てのファイルを結合し、ソートして重複を排除して1個のファイルに書き出す
 
 # ツイート保存先
-* ホームTLは `/fragments/2018-08-20/TIMELINEv2_20180820.063923.920.json` のような名前
-* ユーザーTLは `/fragments/2018-08-20/USERv2_20180820.071617.530.json` のような名前
+* ホームTLは `s3://YOUR-BUCKET-NAME/raw/2020-01-20/20200120.074634.845.json` のような名前
+* ユーザーTLは `s3://YOUR-BUCKET-NAME/raw/user/2020-01-20/20200120.032328.128_859217111108829184.json` のような名前
 
 # インストール
 ## 1. TwitterのAPIキーを取得
-頑張ってください……
+頑張ってください。
 
-## 2. ビルド
+## 2. ビルド＆アップロード
+自分でやりたい人向け。使うだけの人はステップ3にスキップ。
+
 ```
 git clone https://github.com/netebakari/twitter-tl-tracker.git
 cd twitter-tl-tracker
-npm install
-npx tsc
+./build.sh
 ```
 
-ビルドが通ったことを確認したら、不要なモジュールを除去した上でデプロイパッケージを作る。（この辺はどうやるのが正道なのかよく分からない……）
+これで `timeline-tracker-1.1.0.zip` が生成されるのでS3の適当な場所にアップロードしておく。
 
 ```
-rm -rf node_modules/
-npm install --production
-npm run build
+aws s3 cp myFunc.zip s3://YOUR-BUCKET-NAME/myFunc.zip
 ```
 
-これで `myFunc.zip` が生成される。
-
-## 3. S3にアップロード
-作ったパッケージをS3の適当な場所にアップロードしておく。
-
-```
-aws s3 cp myFunc.zip s3://your-bucket/tracker.zip
-```
-
-## 4. CloudFormationを実行
-AWSのコンソールから操作する。
+## 3. CloudFormationを実行
+AWSのコンソールから操作する。東京リージョンでなくてもいい。
 
 https://ap-northeast-1.console.aws.amazon.com/cloudformation/
 
-Create Stackから `cloudformation.yaml` をアップロードしてStackを作成する。設定しなくてはいけないパラメーターがいっぱいある。
+テンプレートの指定 > テンプレートソース に次のURLを入力する。
 
+https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/cloudformation-1.1.0.yaml
+
+設定するパラメーターは次の通り。
 <table>
   <thead>
     <tr><th>名前</th><th>内容</th></tr>
@@ -87,9 +80,9 @@ Create Stackから `cloudformation.yaml` をアップロードしてStackを作�
     <tr><th>S3BucketName</th><td>ツイートのログを保存するS3のバケット名</td></tr>
     <tr><th>TTLinDays</th><td>DynamoDBのTTL（日数。3なら72時間）</td></tr>
     <tr><th>TwitterUserId</th><td>自分のTwitterユーザーID。スクリーンネームではないので注意</td></tr>
-    <tr><th>UploadedPackageBucketName</th><td>パッケージ(.zip)をアップロードしたS3のバケット名</td></tr>
-    <tr><th>UploadedPackageKeyName</th><td>パッケージ(.zip)のキー名</td></tr>
-    <tr><th>UtfOffsetInHours</th><td>見た通り。日本時間なら9。くたばれ夏時間</td></tr>
+    <tr><th>UploadedPackageBucketName</th><td>パッケージ(.zip)をアップロードしたS3のバケット名（デフォルト値でよい）</td></tr>
+    <tr><th>UploadedPackageKeyName</th><td>パッケージ(.zip)のキー名（デフォルト値でよい）</td></tr>
+    <tr><th>UtfOffsetInHours</th><td>日本時間なら9</td></tr>
   </tboby>
 </table>
 
@@ -151,12 +144,14 @@ Lambdaに割り当てるためのロール。最低限必要な権限だけを�
 * ログを取るためだけのものに出したくない気持ち
 
 ## マージ処理を書け
-Lambdaでやるのは無理な気がしてきた
+やる
 
 # Todo
-* ツイートのマージ処理
-  * S3 Selectが複数オブジェクトに対応してくれれば……
 * likeの定期取得＆差分抽出
 * フォロワー＆フォロイーの定期取得＆差分抽出
   * UserStreamのEvent通知の代わりにしたい
 
+
+# リリースノート
+## v1.1.0
+事実上の初回リリース
