@@ -81,11 +81,14 @@ Resources:
 
   S3Bucket:
     Type: 'AWS::S3::Bucket'
+    DeletionPolicy: Retain
     Properties:
       BucketName: !Sub ${S3BucketName}
 
   TimelineDynamoDB:
     Type: 'AWS::DynamoDB::Table'
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       TableName: !Sub '${DynamoDbTableName}'
       AttributeDefinitions:
@@ -186,7 +189,7 @@ Resources:
     Type: 'AWS::Lambda::Function'
     Properties:
       FunctionName: Twitter-TL-Tracker-HomeTimeline
-      Description: '[Twitter-TL-Tracker] ホームTL取得'
+      Description: '[Twitter-TL-Tracker] Home TL'
       Environment:
         Variables:
           twitter_consumer_key: !Sub ${ConsumerKey}
@@ -217,7 +220,7 @@ Resources:
     Type: 'AWS::Lambda::Function'
     Properties:
       FunctionName: Twitter-TL-Tracker-QueueFiller
-      Description: '[Twitter-TL-Tracker] スケジューラー'
+      Description: '[Twitter-TL-Tracker] Scheduler'
       Environment:
         Variables:
           twitter_consumer_key: !Sub ${ConsumerKey}
@@ -248,7 +251,7 @@ Resources:
     Type: 'AWS::Lambda::Function'
     Properties:
       FunctionName: Twitter-TL-Tracker-userTL
-      Description: '[Twitter-TL-Tracker] ユーザーTL取得'
+      Description: '[Twitter-TL-Tracker] User TL'
       Environment:
         Variables:
           twitter_consumer_key: !Sub ${ConsumerKey}
@@ -274,3 +277,27 @@ Resources:
       Code:
         S3Bucket: !Sub ${UploadedPackageBucketName}
         S3Key: !Sub ${UploadedPackageKeyName}
+
+  LamdaUserTLTrigger:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: "every 2 minutes"
+      Name: LamdaUserTLTrigger
+      ScheduleExpression: "cron(*/2 * * * ? *)"
+      State: DISABLED
+      Targets:
+        - Arn: !GetAtt LambdaUserTL.Arn
+          Id: LamdaUserTLTrigger-every2minutes
+        - Arn: !GetAtt LambdaHomeTL.Arn
+          Id: LambdaHomeTLTrigger-every2minutes
+
+  LamdaUserQueueTrigger:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: "every 30 minutes"
+      Name: LamdaUserQueueTrigger
+      ScheduleExpression: "cron(*/30 * * * ? *)"
+      State: DISABLED
+      Targets:
+        - Arn: !GetAtt LambdaUserTL.Arn
+          Id: LamdaUserTLTrigger-every2minutes
