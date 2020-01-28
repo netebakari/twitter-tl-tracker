@@ -21,7 +21,7 @@ Parameters:
   # deploy package location
   UploadedPackageBucketName:
     Default: netebakari
-    AllowedPattern: '^[a-z0-9\-_\.]+$'
+    AllowedPattern: '^[a-z0-9\-\.]+$'
     Description: Your S3 Bucket Name
     Type: String
   UploadedPackageKeyName:
@@ -56,7 +56,7 @@ Parameters:
   # AWS Resources
   S3BucketName:
     Default: "your-bucket-name-for-tweet-log"
-    AllowedPattern: '^[a-z0-9\-_\.]+$'
+    AllowedPattern: '^[a-z0-9\-\.]+$'
     Description: S3 Bucket Name
     Type: String
   DynamoDbTableName:
@@ -81,11 +81,14 @@ Resources:
 
   S3Bucket:
     Type: 'AWS::S3::Bucket'
+    DeletionPolicy: Retain
     Properties:
       BucketName: !Sub ${S3BucketName}
 
   TimelineDynamoDB:
     Type: 'AWS::DynamoDB::Table'
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       TableName: !Sub '${DynamoDbTableName}'
       AttributeDefinitions:
@@ -186,7 +189,7 @@ Resources:
     Type: 'AWS::Lambda::Function'
     Properties:
       FunctionName: Twitter-TL-Tracker-HomeTimeline
-      Description: '[Twitter-TL-Tracker] ホームTL取得'
+      Description: '[Twitter-TL-Tracker] Home TL'
       Environment:
         Variables:
           twitter_consumer_key: !Sub ${ConsumerKey}
@@ -217,7 +220,7 @@ Resources:
     Type: 'AWS::Lambda::Function'
     Properties:
       FunctionName: Twitter-TL-Tracker-QueueFiller
-      Description: '[Twitter-TL-Tracker] スケジューラー'
+      Description: '[Twitter-TL-Tracker] Scheduler'
       Environment:
         Variables:
           twitter_consumer_key: !Sub ${ConsumerKey}
@@ -248,7 +251,7 @@ Resources:
     Type: 'AWS::Lambda::Function'
     Properties:
       FunctionName: Twitter-TL-Tracker-userTL
-      Description: '[Twitter-TL-Tracker] ユーザーTL取得'
+      Description: '[Twitter-TL-Tracker] User TL'
       Environment:
         Variables:
           twitter_consumer_key: !Sub ${ConsumerKey}
@@ -274,3 +277,51 @@ Resources:
       Code:
         S3Bucket: !Sub ${UploadedPackageBucketName}
         S3Key: !Sub ${UploadedPackageKeyName}
+
+  LamdaUserTLTrigger:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: "every 2 minutes"
+      Name: LamdaUserTLTrigger
+      ScheduleExpression: "cron(*/2 * * * ? *)"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt LambdaUserTL.Arn
+          Id: LambdaUserTL-every2minutes
+        - Arn: !GetAtt LambdaHomeTL.Arn
+          Id: LambdaHomeTL-every2minutes
+
+  LambdaInvokePermission1:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref LambdaUserTL
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt LamdaUserTLTrigger.Arn
+
+  LambdaInvokePermission2:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref LambdaHomeTL
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt LamdaUserTLTrigger.Arn
+
+  LamdaUserQueueTrigger:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: "every 30 minutes"
+      Name: LamdaUserQueueTrigger
+      ScheduleExpression: "cron(*/30 * * * ? *)"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt LambdaQueueFillter.Arn
+          Id: LambdaQueueFillter-every2minutes
+
+  LambdaInvokePermission3:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref LambdaQueueFillter
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt LamdaUserQueueTrigger.Arn
