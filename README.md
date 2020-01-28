@@ -86,12 +86,12 @@ https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/clou
   </tboby>
 </table>
 
-## 5. CloudWatch Eventsで自動実行の設定をする
-まだCloudFormationに書いていないので、手動で3つのLambdaに自動実行の設定をする。
+## 5. CloudWatch Eventsを調整する
+現在は次のような実行間隔になっているが、必要に応じて調整する。
 
-* `Twitter-TL-Tracker-HomeTimeline` : 1～2分おき
-* `Twitter-TL-Tracker-QueueFiller` : 30分～1時間おき
-* `Twitter-TL-Tracker-UserTimeline` : 5分おき
+* `Twitter-TL-Tracker-HomeTimeline` : 2分おき
+* `Twitter-TL-Tracker-userTL` : 2分おき
+* `Twitter-TL-Tracker-QueueFiller` : 30分おき
 
 ### 注意点
 * "I acknowledge that AWS CloudFormation might create IAM resources with custom names" にチェックを入れるのを忘れないようにする
@@ -116,21 +116,21 @@ RCU/WCUは5にしているが、レコードのサイズが極端に小さいた
 ### Twitter-TL-Tracker-HomeTimeline
 * ホームTL取得Lambda
 * ハンドラ: `index.homeTimeline`
-* 自動実行: 1～2分おき
-* メモリ: 128MB
+* 自動実行: 2分おき
+* メモリ: 256MB
+
+### Twitter-TL-Tracker-userTL
+* ユーザーTL取得Lambda
+* ハンドラ: `index.userTL`
+* 自動実行: 2分おき
+* メモリ: 320MB
+  * 時間帯にもよるが、128MBだと大抵メモリが溢れて強制終了する。特に初回は全ユーザーの数日前からのツイートを取得しようとするため320MB程度があたりがオススメ。稼働を始めたら128MBにして多分大丈夫
 
 ### Twitter-TL-Tracker-QueueFiller
 * スケジュール作成Lambda
 * ハンドラ: `index.hourlyTask`
 * 自動実行: 30分～1時間おき
-* メモリ: 128MB
-
-### Twitter-TL-Tracker-UserTimeline
-* ユーザーTL取得Lambda
-* ハンドラ: `index.userTL`
-* 自動実行: 5分おき
 * メモリ: 320MB
-  * 時間帯にもよるが、128MBだと大抵メモリが溢れて強制終了する。特に初回は全ユーザーの数日前からのツイートを取得しようとするため320MB程度があたりがオススメ。稼働を始めたら128MBにして多分大丈夫
 
 ## IAM Role
 Lambdaに割り当てるためのロール。最低限必要な権限だけを設定してある。
