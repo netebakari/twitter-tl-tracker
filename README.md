@@ -54,13 +54,13 @@ aws s3 cp myFunc.zip s3://YOUR-BUCKET-NAME/myFunc.zip
 ```
 
 ## 3. CloudFormationを実行
-AWSのコンソールから操作する。東京リージョンでなくてもいい。
+AWSの[コンソール](https://ap-northeast-1.console.aws.amazon.com/cloudformation/)から操作する場合は
 
-https://ap-northeast-1.console.aws.amazon.com/cloudformation/
+テンプレートの指定 > テンプレートソース
 
-テンプレートの指定 > テンプレートソース に次のURLを入力する。
+で次のURLを入力する。
 
-https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/cloudformation-1.1.0.yaml
+https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/cloudformation.yaml
 
 設定するパラメーターは次の通り。
 <table>
@@ -77,7 +77,7 @@ https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/clou
     <tr><th>IncludeFollowers</th><td>trueまたはfalseのいずれか。trueを指定すると自分のフォロワーのTLも取得する</td></tr>
     <tr><th>QueueName</th><td>ユーザーTLを取得するスケジュールを管理するために使うSQSのキュー名</td></tr>
     <tr><th>RoleName</th><td>Lambdaに割り当てるロール名</td></tr>
-    <tr><th>S3BucketName</th><td>ツイートのログを保存するS3のバケット名</td></tr>
+    <tr><th>S3BucketName</th><td>ツイートのログを保存するS3のバケット名。新規に作成するので既存の名前と重複していてはいけない</td></tr>
     <tr><th>TTLinDays</th><td>DynamoDBのTTL（日数。3なら72時間）</td></tr>
     <tr><th>TwitterUserId</th><td>自分のTwitterユーザーID。スクリーンネームではないので注意</td></tr>
     <tr><th>UploadedPackageBucketName</th><td>パッケージ(.zip)をアップロードしたS3のバケット名（デフォルト値でよい）</td></tr>
@@ -97,9 +97,9 @@ https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/clou
 * "I acknowledge that AWS CloudFormation might create IAM resources with custom names" にチェックを入れるのを忘れないようにする
 * 既存のS3バケットを使いたい場合は次の手順に従う
   1. とりあえず適当な名前のS3バケット名を指定してstackを作成
-  1. バケットを削除
   1. Lambdaの環境変数を修正
   1. IAM Roleの記述を修正
+  1. バケットを空にして削除
 
 # CloudFormationによって作成されるもの
 ## SQS
