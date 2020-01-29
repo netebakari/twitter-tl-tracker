@@ -25,7 +25,7 @@ Parameters:
     Description: Your S3 Bucket Name
     Type: String
   UploadedPackageKeyName:
-    Default: twitter-timeline-tracker/timeline-tracker-1.1.0.zip
+    Default: twitter-timeline-tracker/timeline-tracker-latest.zip
     Description: Path to uploaded deploy package
     Type: String
 
