@@ -54,13 +54,13 @@ aws s3 cp myFunc.zip s3://YOUR-BUCKET-NAME/myFunc.zip
 ```
 
 ## 3. CloudFormationを実行
-AWSのコンソールから操作する。東京リージョンでなくてもいい。
+AWSの[コンソール](https://ap-northeast-1.console.aws.amazon.com/cloudformation/)から操作する場合は
 
-https://ap-northeast-1.console.aws.amazon.com/cloudformation/
+テンプレートの指定 > テンプレートソース
 
-テンプレートの指定 > テンプレートソース に次のURLを入力する。
+で次のURLを入力する。
 
-https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/cloudformation-1.1.0.yaml
+https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/cloudformation.yaml
 
 設定するパラメーターは次の通り。
 <table>
@@ -77,7 +77,7 @@ https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/clou
     <tr><th>IncludeFollowers</th><td>trueまたはfalseのいずれか。trueを指定すると自分のフォロワーのTLも取得する</td></tr>
     <tr><th>QueueName</th><td>ユーザーTLを取得するスケジュールを管理するために使うSQSのキュー名</td></tr>
     <tr><th>RoleName</th><td>Lambdaに割り当てるロール名</td></tr>
-    <tr><th>S3BucketName</th><td>ツイートのログを保存するS3のバケット名</td></tr>
+    <tr><th>S3BucketName</th><td>ツイートのログを保存するS3のバケット名。新規に作成するので既存の名前と重複していてはいけない</td></tr>
     <tr><th>TTLinDays</th><td>DynamoDBのTTL（日数。3なら72時間）</td></tr>
     <tr><th>TwitterUserId</th><td>自分のTwitterユーザーID。スクリーンネームではないので注意</td></tr>
     <tr><th>UploadedPackageBucketName</th><td>パッケージ(.zip)をアップロードしたS3のバケット名（デフォルト値でよい）</td></tr>
@@ -86,20 +86,20 @@ https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/clou
   </tboby>
 </table>
 
-## 5. CloudWatch Eventsで自動実行の設定をする
-まだCloudFormationに書いていないので、手動で3つのLambdaに自動実行の設定をする。
+## 5. CloudWatch Eventsを調整する
+現在は次のような実行間隔になっているが、必要に応じて調整する。
 
-* `Twitter-TL-Tracker-HomeTimeline` : 1～2分おき
-* `Twitter-TL-Tracker-QueueFiller` : 30分～1時間おき
-* `Twitter-TL-Tracker-UserTimeline` : 5分おき
+* `Twitter-TL-Tracker-HomeTimeline` : 2分おき
+* `Twitter-TL-Tracker-userTL` : 2分おき
+* `Twitter-TL-Tracker-QueueFiller` : 30分おき
 
 ### 注意点
 * "I acknowledge that AWS CloudFormation might create IAM resources with custom names" にチェックを入れるのを忘れないようにする
 * 既存のS3バケットを使いたい場合は次の手順に従う
   1. とりあえず適当な名前のS3バケット名を指定してstackを作成
-  1. バケットを削除
   1. Lambdaの環境変数を修正
   1. IAM Roleの記述を修正
+  1. バケットを空にして削除
 
 # CloudFormationによって作成されるもの
 ## SQS
@@ -116,21 +116,21 @@ RCU/WCUは5にしているが、レコードのサイズが極端に小さいた
 ### Twitter-TL-Tracker-HomeTimeline
 * ホームTL取得Lambda
 * ハンドラ: `index.homeTimeline`
-* 自動実行: 1～2分おき
-* メモリ: 128MB
+* 自動実行: 2分おき
+* メモリ: 256MB
+
+### Twitter-TL-Tracker-userTL
+* ユーザーTL取得Lambda
+* ハンドラ: `index.userTL`
+* 自動実行: 2分おき
+* メモリ: 320MB
+  * 時間帯にもよるが、128MBだと大抵メモリが溢れて強制終了する。特に初回は全ユーザーの数日前からのツイートを取得しようとするため320MB程度があたりがオススメ。稼働を始めたら128MBにして多分大丈夫
 
 ### Twitter-TL-Tracker-QueueFiller
 * スケジュール作成Lambda
 * ハンドラ: `index.hourlyTask`
 * 自動実行: 30分～1時間おき
-* メモリ: 128MB
-
-### Twitter-TL-Tracker-UserTimeline
-* ユーザーTL取得Lambda
-* ハンドラ: `index.userTL`
-* 自動実行: 5分おき
 * メモリ: 320MB
-  * 時間帯にもよるが、128MBだと大抵メモリが溢れて強制終了する。特に初回は全ユーザーの数日前からのツイートを取得しようとするため320MB程度があたりがオススメ。稼働を始めたら128MBにして多分大丈夫
 
 ## IAM Role
 Lambdaに割り当てるためのロール。最低限必要な権限だけを設定してある。
@@ -155,3 +155,7 @@ Lambdaに割り当てるためのロール。最低限必要な権限だけを�
 # リリースノート
 ## v1.1.0
 事実上の初回リリース
+
+## v1.1.1
+CloudFormationでLambdaの自動実行もやるようにした
+

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ -e myFunc.zip ]; then
-   rm timeline-tracker-1.1.0.zip
+   rm timeline-tracker-latest.zip
 fi
 
 if [ -e node_modules ]; then
@@ -16,7 +16,7 @@ npx tsc
 rm -rf node_modules
 npm install --production
 cd dist/src
-zip ../../timeline-tracker-1.1.0.zip -r *
+zip ../../timeline-tracker-latest.zip -r *
 cd ../..
-zip timeline-tracker-1.1.0.zip -r node_modules/
+zip timeline-tracker-latest.zip -r node_modules/
 npm install

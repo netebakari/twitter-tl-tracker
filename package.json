@@ -1,7 +1,7 @@
 {
   "name": "twitter-tl-tracker",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.1.1",
+  "description": "Twitter Timeline Tracker",
   "main": "index.js",
   "scripts": {
     "user": "node dist/src/cli/index.js user",
