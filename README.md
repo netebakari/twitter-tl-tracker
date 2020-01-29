@@ -31,8 +31,9 @@ Lambda3つで構成してある。
 **未実装。** 1と3が吐いた全てのファイルを結合し、ソートして重複を排除して1個のファイルに書き出す
 
 # ツイート保存先
-* ホームTLは `s3://YOUR-BUCKET-NAME/raw/2020-01-20/20200120.074634.845.json` のような名前
-* ユーザーTLは `s3://YOUR-BUCKET-NAME/raw/user/2020-01-20/20200120.032328.128_859217111108829184.json` のような名前
+* ホームTLは `s3://YOUR-BUCKET-NAME/raw/2020-12-31/20201231.235959.999.json` のような名前
+* ユーザーTLは `s3://YOUR-BUCKET-NAME/raw/user/2020-12-31/20201231.235959.999_123456789012345678.json` のような名前
+  * どちらも時刻をミリ秒までつけてキーがユニークになるようにしている。時刻そのものにあまり意味はない
 
 # インストール
 ## 1. TwitterのAPIキーを取得
@@ -47,7 +48,7 @@ cd twitter-tl-tracker
 ./build.sh
 ```
 
-これで `timeline-tracker-1.1.0.zip` が生成されるのでS3の適当な場所にアップロードしておく。
+これで `timeline-tracker-latest.zip` が生成されるのでS3の適当な場所にアップロードしておく。
 
 ```
 aws s3 cp myFunc.zip s3://YOUR-BUCKET-NAME/myFunc.zip
@@ -85,6 +86,31 @@ https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/clou
     <tr><th>UtfOffsetInHours</th><td>日本時間なら9</td></tr>
   </tboby>
 </table>
+
+CLIからの場合は次のように実行する。
+
+```sh
+aws cloudformation create-stack \
+  --stack-name TwitterTLTracker \
+  --template-url "https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/cloudformation.yaml" \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --parameters \
+                     ParameterKey=AccessToken,ParameterValue=___YOUR_ACCESS_TOKEN__ \
+               ParameterKey=AccessTokenSecret,ParameterValue=___YOUR_ACCESS_TOKEN_SECRET__ \
+                     ParameterKey=ConsumerKey,ParameterValue=___YOUR_CONSUMER_KEY__ \
+                  ParameterKey=ConsumerSecret,ParameterValue=__YOUR_CONSUMER_SECRET__ \
+                   ParameterKey=DaysToArchive,ParameterValue=4 \
+               ParameterKey=DynamoDbTableName,ParameterValue=TwitterTLTracker-Timelines \
+                ParameterKey=IncludeFollowers,ParameterValue=false \
+                       ParameterKey=QueueName,ParameterValue=TwitterTLTracker-ScheduleQueue \
+                        ParameterKey=RoleName,ParameterValue=TwitterTLTracker-Lambda \
+                    ParameterKey=S3BucketName,ParameterValue=__YOUR_S3_BUCKET_NAME__ \
+                       ParameterKey=TTLinDays,ParameterValue=4 \
+                   ParameterKey=TwitterUserId,ParameterValue=__YOUR_TWITTER_ID__ \
+       ParameterKey=UploadedPackageBucketName,ParameterValue=netebakari \
+          ParameterKey=UploadedPackageKeyName,ParameterValue=twitter-timeline-tracker/timeline-tracker-latest.zip \
+                ParameterKey=UtfOffsetInHours,ParameterValue=9
+```
 
 ## 5. CloudWatch Eventsを調整する
 現在は次のような実行間隔になっているが、必要に応じて調整する。
