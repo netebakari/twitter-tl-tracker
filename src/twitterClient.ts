@@ -1,9 +1,11 @@
-import Twit, * as twit from "twit";
-import * as Types from "./types"
-import * as TwitTypes from "./types/twit"
+/* eslint-disable @typescript-eslint/camelcase */
 import * as _ from "lodash";
-import * as env from "./env"
-import moment from "moment"
+import moment from "moment";
+import Twit, * as twit from "twit";
+
+import * as env from "./env";
+import * as Types from "./types";
+import * as TwitTypes from "./types/twit";
 import * as util from "./util";
 
 const client = new Twit(env.twitterToken);
@@ -12,119 +14,166 @@ const client = new Twit(env.twitterToken);
  * users/lookup を叩いてユーザー情報を取得する
  * @param userIds ユーザーIDの配列。100件ごとにまとめてAPIがコールされる
  */
-export const lookupUsers = async (userIds: string[]): Promise<{apiCallCount: number, users: Types.User[]}> => {
-    const doPost = async (params: twit.Params): Promise<Types.User[]> => {
-        const data = await client.post("users/lookup", params);
-        if (TwitTypes.isUsers(data)) {
-            return data;
-        } else {
-            console.error(data);
-            throw new Error("取得した値の形が変です");
-        }
+export const lookupUsers = async (
+  userIds: string[]
+): Promise<{ apiCallCount: number; users: Types.User[] }> => {
+  const doPost = async (params: twit.Params): Promise<Types.User[]> => {
+    const data = await client.post("users/lookup", params);
+    if (TwitTypes.isUsers(data)) {
+      return data;
+    } else {
+      console.error(data);
+      throw new Error("取得した値の形が変です");
     }
+  };
 
-    let apiCallCount = 0;
-    const chunks = [];
-    for(let i = 0; i < userIds.length; i += 100) {
-        const userIdsPart = userIds.slice(i, i + 100);
-        const params = {user_id: userIdsPart.join(","), include_entities: true, tweet_mode: "extended"};
-        apiCallCount++;
-        chunks.push(await doPost(params));
-    }
+  let apiCallCount = 0;
+  const chunks = [];
+  for (let i = 0; i < userIds.length; i += 100) {
+    const userIdsPart = userIds.slice(i, i + 100);
+    const params = {
+      user_id: userIdsPart.join(","),
+      include_entities: true,
+      tweet_mode: "extended"
+    };
+    apiCallCount++;
+    chunks.push(await doPost(params));
+  }
 
-    return {apiCallCount, users: _.flatten(chunks)};
-}
+  return { apiCallCount, users: _.flatten(chunks) };
+};
 
 /**
  * あるユーザーのフォロワーまたはフォロイーのIDを取得する
  * @param user ユーザー
  * @param friendsOrFollowers trueならフォロイー（フォローしている人）を、falseならフォロワーを取得する
  */
-export const getFriendsOrFollowersIds = async (user: Types.UserType, friendsOrFollowers: boolean, maxApiCallCount = 100): Promise<string[]> => {
-    const result: string[][] = [];
-    let chunk = await _getFriendsOrFollowersId(user, friendsOrFollowers);
+export const getFriendsOrFollowersIds = async (
+  user: Types.UserType,
+  friendsOrFollowers: boolean,
+  maxApiCallCount = 100
+): Promise<string[]> => {
+  const result: string[][] = [];
+  let chunk = await _getFriendsOrFollowersId(user, friendsOrFollowers);
+  result.push(chunk.ids);
+  let apiCallCount = 1;
+  while (apiCallCount++ < maxApiCallCount && chunk.nextCursor) {
+    chunk = await _getFriendsOrFollowersId(
+      user,
+      friendsOrFollowers,
+      chunk.nextCursor
+    );
     result.push(chunk.ids);
-    let apiCallCount = 1;
-    while(apiCallCount++ < maxApiCallCount && chunk.nextCursor) {
-        chunk = await _getFriendsOrFollowersId(user, friendsOrFollowers, chunk.nextCursor);
-        result.push(chunk.ids);
-    }
-    return _.flatten(result);
-}
+  }
+  return _.flatten(result);
+};
 
-const _getFriendsOrFollowersId = async (user: Types.UserType, friendsOrFollowers: boolean, cursor: string|null = null): Promise<{ids: string[]; nextCursor?: string}> => {
-    const params: twit.Params = { stringify_ids: true };
-    if (cursor) { params.cursor = cursor; }
-    if (user.userId) { params.user_id = user.userId; }
-    else { params.screen_name = user.screenName; }
-    
-    const endpoint = friendsOrFollowers ? "friends/ids" : "followers/ids";
-    const result = await client.get(endpoint, params);
-    if (TwitTypes.isFriendsOrFollowersIdResultType(result.data)) {
-        if (result.data.next_cursor === 0) { return {ids: result.data.ids}; }
-        return {ids: result.data.ids, nextCursor: result.data.next_cursor_str}
-    } else {
-        console.error(result);
-        throw new Error("取得した値の形が変です");
+const _getFriendsOrFollowersId = async (
+  user: Types.UserType,
+  friendsOrFollowers: boolean,
+  cursor: string | null = null
+): Promise<{ ids: string[]; nextCursor?: string }> => {
+  const params: twit.Params = { stringify_ids: true };
+  if (cursor) {
+    params.cursor = cursor;
+  }
+  if (user.userId) {
+    params.user_id = user.userId;
+  } else {
+    params.screen_name = user.screenName;
+  }
+
+  const endpoint = friendsOrFollowers ? "friends/ids" : "followers/ids";
+  const result = await client.get(endpoint, params);
+  if (TwitTypes.isFriendsOrFollowersIdResultType(result.data)) {
+    if (result.data.next_cursor === 0) {
+      return { ids: result.data.ids };
     }
-}
+    return { ids: result.data.ids, nextCursor: result.data.next_cursor_str };
+  } else {
+    console.error(result);
+    throw new Error("取得した値の形が変です");
+  }
+};
 
 /**
  * 対象のユーザーのlikeを最大3200件取得する。
  * @param user ユーザー
  */
-export const getFavorites = async (user: Types.UserType): Promise<{apiCallCount: number, tweets: Types.Tweet[]}> => {
-    const firstChunk = await getTweets("Favorites", user, {sinceId: "100"});
-    if (firstChunk.length < 180) { return {apiCallCount: 1, tweets: firstChunk}; }
-    let minimumId = util.getMinimumId(firstChunk);
+export const getFavorites = async (
+  user: Types.UserType
+): Promise<{ apiCallCount: number; tweets: Types.Tweet[] }> => {
+  const firstChunk = await getTweets("Favorites", user, { sinceId: "100" });
+  if (firstChunk.length < 180) {
+    return { apiCallCount: 1, tweets: firstChunk };
+  }
+  let minimumId = util.getMinimumId(firstChunk);
 
-    const chunks: Types.Tweet[][] = [firstChunk];
-    let apiCallCount = 1;
-    for(let i = 0; i < 15; i++) {
-        const chunk = await getTweets("Favorites", user, {maxId: minimumId});
-        apiCallCount++;
-        chunks.push(chunk);
-        if (chunk.length === 0) { break; }
-        const newMinimumId = util.getMinimumId(chunk);
-        // IDの最小値が更新できなかったら終わり
-        if (minimumId === newMinimumId) { break; } 
-        minimumId = newMinimumId;
+  const chunks: Types.Tweet[][] = [firstChunk];
+  let apiCallCount = 1;
+  for (let i = 0; i < 15; i++) {
+    const chunk = await getTweets("Favorites", user, { maxId: minimumId });
+    apiCallCount++;
+    chunks.push(chunk);
+    if (chunk.length === 0) {
+      break;
     }
+    const newMinimumId = util.getMinimumId(chunk);
+    // IDの最小値が更新できなかったら終わり
+    if (minimumId === newMinimumId) {
+      break;
+    }
+    minimumId = newMinimumId;
+  }
 
-    const tweets = _.flatten(chunks);
-    return {apiCallCount, tweets};
-}
-
+  const tweets = _.flatten(chunks);
+  return { apiCallCount, tweets };
+};
 
 /**
  * 対象のユーザーまたはホームタイムラインから直近のツイートを最大3200件（ホームタイムラインの場合は800件）取得する。
  * @param user ユーザー。nullを指定するとホームタイムライン
  * @param sinceId これ以降
  */
-export const getRecentTweets = async (user: Types.UserType|null, sinceId: string): Promise<{apiCallCount: number, tweets: Types.TweetEx[]}> => {
-    const timelieType: Types.TimeLineType = (user === null) ? "HomeTL" : "UserTL";
-    const firstChunk = await getTweets(timelieType, user, {sinceId: sinceId});
-    if (firstChunk.length < 180) { return {apiCallCount: 1, tweets: firstChunk}; }
-    let minimumId = util.getMinimumId(firstChunk);
+export const getRecentTweets = async (
+  user: Types.UserType | null,
+  sinceId: string
+): Promise<{ apiCallCount: number; tweets: Types.TweetEx[] }> => {
+  const timelieType: Types.TimeLineType = user === null ? "HomeTL" : "UserTL";
+  const firstChunk = await getTweets(timelieType, user, { sinceId: sinceId });
+  if (firstChunk.length < 180) {
+    return { apiCallCount: 1, tweets: firstChunk };
+  }
+  let minimumId = util.getMinimumId(firstChunk);
 
-    const maxloopCount = user ? 15 : 3; // ホームタイムラインは最大800件まで。最初に1回取ったから3回ループする
-    const chunks: Types.TweetEx[][] = [firstChunk];
-    let apiCallCount = 1;
-    for(let i = 0; i < maxloopCount; i++) {
-        const chunk = await getTweets(timelieType, user, {maxId: minimumId});
-        apiCallCount++;
-        chunks.push(chunk);
-        if (chunk.length === 0) { break; }
-        const newMinimumId = util.getMinimumId(chunk);
-        // IDの最小値が更新できなかったか、IDの最小値が最初に与えたsinceIdと同等以下になったら終わり
-        if (minimumId === newMinimumId || util.compareNumber(sinceId, newMinimumId) >= 0) { break; } 
-        minimumId = newMinimumId;
+  const maxloopCount = user ? 15 : 3; // ホームタイムラインは最大800件まで。最初に1回取ったから3回ループする
+  const chunks: Types.TweetEx[][] = [firstChunk];
+  let apiCallCount = 1;
+  for (let i = 0; i < maxloopCount; i++) {
+    const chunk = await getTweets(timelieType, user, { maxId: minimumId });
+    apiCallCount++;
+    chunks.push(chunk);
+    if (chunk.length === 0) {
+      break;
     }
+    const newMinimumId = util.getMinimumId(chunk);
+    // IDの最小値が更新できなかったか、IDの最小値が最初に与えたsinceIdと同等以下になったら終わり
+    if (
+      minimumId === newMinimumId ||
+      util.compareNumber(sinceId, newMinimumId) >= 0
+    ) {
+      break;
+    }
+    minimumId = newMinimumId;
+  }
 
-    const tweets = _.flatten(chunks).filter(x => util.compareNumber(x.id_str, sinceId) >= 0);
-    return {
-        apiCallCount, tweets
-    };
+  const tweets = _.flatten(chunks).filter(
+    x => util.compareNumber(x.id_str, sinceId) >= 0
+  );
+  return {
+    apiCallCount,
+    tweets
+  };
 };
 
 /**
@@ -133,64 +182,91 @@ export const getRecentTweets = async (user: Types.UserType|null, sinceId: string
  * @param user_id ユーザー。timelineTypeでHomeTimelineを選んだときは無視される
  * @param condition sinceId, maxIdのいずれかを指定する。両方省略した場合は直近の200件が返される
  */
-export const getTweets = async (timelineType: Types.TimeLineType, user: Types.UserType|null, condition: {sinceId?: string, maxId?: string}): Promise<Types.TweetEx[]> => {
-    const params: twit.Params = {
-        count: 200,
-        include_rts: true,
-        exclude_replies: false,
-        tweet_mode: "extended"
-    };
-    if (condition.sinceId) { params.since_id = condition.sinceId; }
-    if (condition.maxId) { params.max_id = condition.maxId; }
-    if (timelineType !== "HomeTL") {
-        // ホームタイムライン以外の場合、userは非nullでないとエラー
-        if (user === null) { throw new Error("UserTL and Favorits need user info"); }
-        if (user.userId) { params.user_id = user.userId; }
-        else { params.screen_name = user.screenName; }
+export const getTweets = async (
+  timelineType: Types.TimeLineType,
+  user: Types.UserType | null,
+  condition: { sinceId?: string; maxId?: string }
+): Promise<Types.TweetEx[]> => {
+  const params: twit.Params = {
+    count: 200,
+    include_rts: true,
+    exclude_replies: false,
+    tweet_mode: "extended"
+  };
+  if (condition.sinceId) {
+    params.since_id = condition.sinceId;
+  }
+  if (condition.maxId) {
+    params.max_id = condition.maxId;
+  }
+  if (timelineType !== "HomeTL") {
+    // ホームタイムライン以外の場合、userは非nullでないとエラー
+    if (user === null) {
+      throw new Error("UserTL and Favorits need user info");
     }
-    let endpoint = "";
-    switch(timelineType) {
-        case "HomeTL": endpoint = "statuses/home_timeline"; break;
-        case "UserTL": endpoint = "statuses/user_timeline"; break;
-        case "Favorites": endpoint = "favorites/list"; break;
-    }
-    console.log(`TwitterClient#getTweets(): endpoint=${endpoint}, parameter=${JSON.stringify(params)}`);
-
-    const result = await client.get(endpoint, params);
-    if (TwitTypes.isTweets(result.data)) {
-        return alterTweet(result.data);
+    if (user.userId) {
+      params.user_id = user.userId;
     } else {
-        console.error(result.data);
-        throw new Error("戻り値が変です");
+      params.screen_name = user.screenName;
     }
-}
+  }
+  let endpoint = "";
+  switch (timelineType) {
+    case "HomeTL":
+      endpoint = "statuses/home_timeline";
+      break;
+    case "UserTL":
+      endpoint = "statuses/user_timeline";
+      break;
+    case "Favorites":
+      endpoint = "favorites/list";
+      break;
+  }
+  console.log(
+    `TwitterClient#getTweets(): endpoint=${endpoint}, parameter=${JSON.stringify(
+      params
+    )}`
+  );
 
+  const result = await client.get(endpoint, params);
+  if (TwitTypes.isTweets(result.data)) {
+    return alterTweet(result.data);
+  } else {
+    console.error(result.data);
+    throw new Error("戻り値が変です");
+  }
+};
 
 /**
  * ツイートを少し加工する。
  * 1. timestampLocal（"2018-08-11T12:34:45+0900"形式）を追加
  * 2. dateLocal("2018-08-11"形式)を追加
  * 3. serverTimestamp（"2018-08-11T12:34:45+0900"形式）を追加。これは取得日時
- * @param tweet 
+ * @param tweet
  */
-const alterTweet = (tweets: Types.Tweet[], serverTimestamp?: string): Types.TweetEx[] => {
-    const _serverTimestamp = serverTimestamp || util.getCurrentTime();
-    return tweets.map(tweet => {
-        const timestamp = moment(new Date(tweet.created_at)).utcOffset(env.tweetOption.utfOffset);
-        return {...tweet, 
-            timestampLocal: timestamp.format(),
-            dateLocal: timestamp.format("YYYY-MM-DD"),
-            serverTimestamp: _serverTimestamp
-        };
-    });
-}
+const alterTweet = (
+  tweets: Types.Tweet[],
+  serverTimestamp?: string
+): Types.TweetEx[] => {
+  const _serverTimestamp = serverTimestamp || util.getCurrentTime();
+  return tweets.map(tweet => {
+    const timestamp = moment(new Date(tweet.created_at)).utcOffset(
+      env.tweetOption.utfOffset
+    );
+    return {
+      ...tweet,
+      timestampLocal: timestamp.format(),
+      dateLocal: timestamp.format("YYYY-MM-DD"),
+      serverTimestamp: _serverTimestamp
+    };
+  });
+};
 
 /**
  * ツイートを送信する。インスタンス生成時に dryRun = true を指定していたら console.log で出力するだけ
- * @param text 
+ * @param text
  */
 const sendTweet = async (text: string) => {
-    console.log(`ツイートを送信します: ${text}`);
-    return client.post('statuses/update', {status: text});
+  console.log(`ツイートを送信します: ${text}`);
+  return client.post("statuses/update", { status: text });
 };
-

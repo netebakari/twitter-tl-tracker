@@ -21,6 +21,9 @@
   "bugs": {
     "url": "https://github.com/netebakari/twitter-tl-tracker/issues"
   },
+  "prettier": {
+    "tabWidth": 2
+  },
   "homepage": "https://github.com/netebakari/twitter-tl-tracker#readme",
   "devDependencies": {
     "@types/aws-lambda": "^8.10.39",
@@ -30,8 +33,17 @@
     "@types/moment": "^2.13.0",
     "@types/node": "^13.1.7",
     "@types/twit": "^2.2.23",
+    "@typescript-eslint/eslint-plugin": "^2.18.0",
+    "@typescript-eslint/parser": "^2.18.0",
     "aws-sdk": "^2.603.0",
+    "eslint": "^6.8.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-prettier": "^6.10.0",
+    "eslint-plugin-import": "^2.20.0",
+    "eslint-plugin-prettier": "^3.1.2",
+    "eslint-plugin-simple-import-sort": "^5.0.1",
     "mocha": "^7.0.0",
+    "prettier": "^1.19.1",
     "typescript": "^3.7.4"
   },
   "dependencies": {
