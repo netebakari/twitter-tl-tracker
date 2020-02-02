@@ -1,11 +1,54 @@
 import * as assert from "assert";
-import * as myModule from "../src/index"
+import * as fs from "fs";
 import * as mocha from "mocha";
+
+import * as myModule from "../src/index";
+import * as s3 from "../src/s3";
 import * as Types from "../src/types";
 import * as TwitTypes from "../src/types/twit";
-import * as fs from "fs";
 
-describe("type guard functions", () => {
+describe("s3", () => {
+  describe("getTextContent", () => {
+    it("plain text", async () => {
+      const data = await s3.getTextContent("test/hello.txt", "netebakari");
+      assert.equal(data?.body, "Hello, Happy World!");
+      assert.equal(data?.timestamp?.format(), "2020-02-02T11:19:12+00:00");
+    });
+  });
+
+  describe("getContent", () => {
+    it("json1 (sigle tweet)", async () => {
+      const data = await s3.getContent<Types.TweetEx>(
+        "test/tweet1.json",
+        Types.isTweetEx,
+        "netebakari"
+      );
+      assert.equal(data?.data.id_str, "1204129214640906241");
+      assert.equal(data?.timestamp?.format(), "2020-02-02T11:17:44+00:00");
+    });
+
+    it("json2 (sigle tweet)", async () => {
+      const data = await s3.getContent<Types.TweetEx>(
+        "test/tweet2.json",
+        Types.isTweetEx,
+        "netebakari"
+      );
+      assert.equal(data?.data.id_str, "1204129173507362818");
+      assert.equal(data?.timestamp?.format(), "2020-02-02T11:17:44+00:00");
+    });
+  });
+
+  describe("getTweets", () => {
+    it("json lines (multiple tweets)", async () => {
+      const tweets = await s3.getTweets("test/tweets.json", "netebakari");
+      assert.equal(tweets.length, 2);
+      assert.equal(tweets[0].id_str, "1204129214640906241");
+      assert.equal(tweets[1].id_str, "1204129173507362818");
+    });
+  });
+});
+
+describe("type guards", () => {
   describe("isUserOnDb", () => {
     it("test1", () => {
       const record = {
@@ -59,13 +102,12 @@ describe("type guard functions", () => {
       };
       assert.equal(Types.isFriendsAndFollowersIdsType(data1), false);
       assert.equal(Types.isFriendsAndFollowersIdsType(data2), false);
-    })
+    });
 
     it("empty object", () => {
       const data = {};
       assert.equal(Types.isFriendsAndFollowersIdsType(data), false);
     });
-
 
     it("includes other than string", () => {
       const data: any = {
@@ -88,6 +130,5 @@ describe("type guard functions", () => {
       const data = JSON.parse(buffer.toString("utf8"));
       assert.equal(TwitTypes.isTweet(data), true);
     });
-
-  })
+  });
 });

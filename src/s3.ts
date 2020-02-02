@@ -15,14 +15,16 @@ const s3 = new AWS.S3({ region: env.s3.region });
  * @param key
  * @param typeGuardFunction
  */
-const getTextContent = async (
-  key: string
+export const getTextContent = async (
+  key: string,
+  bucketName?: string
 ): Promise<{ body: string; timestamp?: moment.Moment } | undefined> => {
+  bucketName = bucketName ?? env.s3.bucket;
   try {
     let body = "";
     const data = await s3
       .getObject({
-        Bucket: env.s3.bucket,
+        Bucket: bucketName,
         Key: key
       })
       .promise();
@@ -32,7 +34,7 @@ const getTextContent = async (
     } else if (Buffer.isBuffer(data.Body)) {
       body = data.Body.toString("utf8");
     } else {
-      console.error(`s3://${env.s3.bucket}/${key} may not be text data`);
+      console.error(`s3://${bucketName}/${key} may not be text data`);
       return undefined;
     }
 
@@ -47,7 +49,7 @@ const getTextContent = async (
     return { body, timestamp };
   } catch (e) {
     console.error(e);
-    console.error(`s3://${env.s3.bucket}/${key} not found`);
+    console.error(`s3://${bucketName}/${key} not found`);
     return undefined;
   }
 };
@@ -58,22 +60,23 @@ const getTextContent = async (
  * @param key
  * @param typeGuardFunction
  */
-async function getContent<T>(
+export async function getContent<T>(
   key: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  typeGuardFunction?: (arg: any) => arg is T
+  typeGuardFunction?: (arg: any) => arg is T,
+  bucketName?: string
 ): Promise<{ data: T; timestamp?: moment.Moment } | undefined> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const raw = await getTextContent(key);
+  bucketName = bucketName ?? env.s3.bucket;
+  const raw = await getTextContent(key, bucketName);
   if (!raw) {
     return undefined;
   }
   let data: any = undefined;
   try {
-    data = JSON.parse(data.body);
+    data = JSON.parse(raw.body);
   } catch (e) {
     console.error(e);
-    console.error(`s3://${env.s3.bucket}/${key} is not a json`);
+    console.error(`s3://${bucketName}/${key} is not a json`);
     return undefined;
   }
 
@@ -82,7 +85,7 @@ async function getContent<T>(
       return { data: data, timestamp: raw.timestamp };
     } else {
       console.error(
-        `s3://${env.s3.bucket}/${key} did'nt satisfy provided type guard function`
+        `s3://${bucketName}/${key} did'nt satisfy provided type guard function`
       );
       return undefined;
     }
@@ -92,32 +95,44 @@ async function getContent<T>(
 }
 
 /**
- * S3にJSON Linesとして保存されたツイートのリストを読み出してパースする。バケットはConfigで指定されたものを使う。
+ * S3にJSON Linesとして保存されたツイートのリストを読み出してパースする。
  * オブジェクトが見つからなかった場合、パースに失敗した場合は例外をスローする
- * @param keyName キー
+ * @param key キー
+ * @param bucketName バケット名。省略時は環境変数で指定されたもの
  */
-export const getTweets = async (key: string): Promise<Types.TweetEx[]> => {
-  const raw = await getTextContent(key);
+export const getTweets = async (
+  key: string,
+  bucketName?: string
+): Promise<Types.TweetEx[]> => {
+  bucketName = bucketName ?? env.s3.bucket;
+  const raw = await getTextContent(key, bucketName);
   if (!raw) {
-    throw new Error(`s3://${env.s3.bucket}/key is not found or not tweet data`);
+    throw new Error(`s3://${bucketName}/${key} is not found or not text data`);
   }
-  return raw.body.split("\n").map(x => JSON.parse(x));
+  const result = raw.body.split("\n").map(x => JSON.parse(x));
+  if (Types.isTweetExArray(result)) {
+    return result;
+  } else {
+    throw new Error(`s3://${bucketName}/${key} is not tweet data`);
+  }
 };
 
 export const putArchivedTweets = async (
   date: moment.Moment,
   tweets: Types.TweetEx[]
 ) => {
-  const keyName = `archive/${date.format("YYYY")}/${date.format(
-    "YYYY-MM"
-  )}/${date.format("YYYY-MM-DD")}.json`;
-  console.log(`s3://${env.s3.bucket}/${keyName}を保存します`);
+  date.utcOffset(env.tweetOption.utfOffset);
+  const year = date.format("YYYY");
+  const yearMonth = date.format("YYYY-MM");
+  const yearMonthDate = date.format("YYYY-MM-DD");
+  const key = `archive/${year}/${yearMonth}/${yearMonthDate}.json`;
+  console.log(`s3://${env.s3.bucket}/${key}を保存します`);
   const content = tweets.map(x => JSON.stringify(x)).join("\n");
   await s3
     .putObject({
       Body: content,
       Bucket: env.s3.bucket,
-      Key: keyName,
+      Key: key,
       ContentType: "application/json; charset=utf-8"
     })
     .promise();
