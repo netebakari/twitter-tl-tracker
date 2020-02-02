@@ -10,6 +10,120 @@ import * as util from "./util";
 const s3 = new AWS.S3({ region: env.s3.region });
 
 /**
+ * S3（バケットは環境変数で与えられたもの固定）からテキストデータを取得してタイムスタンプとともに返す。
+ * データが見つからなかったとき、stringでもBufferでもないものが返ってきたときはundefinedを返す
+ * @param key
+ * @param typeGuardFunction
+ */
+const getTextContent = async (
+  key: string
+): Promise<{ body: string; timestamp?: moment.Moment } | undefined> => {
+  try {
+    let body = "";
+    const data = await s3
+      .getObject({
+        Bucket: env.s3.bucket,
+        Key: key
+      })
+      .promise();
+    // data.Bodyは実際にはstringかBuffer
+    if (typeof data.Body === "string") {
+      body = data.Body;
+    } else if (Buffer.isBuffer(data.Body)) {
+      body = data.Body.toString("utf8");
+    } else {
+      console.error(`s3://${env.s3.bucket}/${key} may not be text data`);
+      return undefined;
+    }
+
+    const timestamp = (() => {
+      try {
+        return moment(data.LastModified);
+      } catch (e) {
+        return undefined;
+      }
+    })();
+
+    return { body, timestamp };
+  } catch (e) {
+    console.error(e);
+    console.error(`s3://${env.s3.bucket}/${key} not found`);
+    return undefined;
+  }
+};
+
+/**
+ * S3（バケットは環境変数で与えられたもの固定）からJSONデータを取得し、パースして返す。
+ * データが見つからなかったとき、型チェックに通らなかったときはundefinedを返す
+ * @param key
+ * @param typeGuardFunction
+ */
+async function getContent<T>(
+  key: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  typeGuardFunction?: (arg: any) => arg is T
+): Promise<{ data: T; timestamp?: moment.Moment } | undefined> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = await getTextContent(key);
+  if (!raw) {
+    return undefined;
+  }
+  let data: any = undefined;
+  try {
+    data = JSON.parse(data.body);
+  } catch (e) {
+    console.error(e);
+    console.error(`s3://${env.s3.bucket}/${key} is not a json`);
+    return undefined;
+  }
+
+  if (typeGuardFunction) {
+    if (typeGuardFunction(data)) {
+      return { data: data, timestamp: raw.timestamp };
+    } else {
+      console.error(
+        `s3://${env.s3.bucket}/${key} did'nt satisfy provided type guard function`
+      );
+      return undefined;
+    }
+  } else {
+    return { data: data as T, timestamp: raw.timestamp };
+  }
+}
+
+/**
+ * S3にJSON Linesとして保存されたツイートのリストを読み出してパースする。バケットはConfigで指定されたものを使う。
+ * オブジェクトが見つからなかった場合、パースに失敗した場合は例外をスローする
+ * @param keyName キー
+ */
+export const getTweets = async (key: string): Promise<Types.TweetEx[]> => {
+  const raw = await getTextContent(key);
+  if (!raw) {
+    throw new Error(`s3://${env.s3.bucket}/key is not found or not tweet data`);
+  }
+  return raw.body.split("\n").map(x => JSON.parse(x));
+};
+
+export const putArchivedTweets = async (
+  date: moment.Moment,
+  tweets: Types.TweetEx[]
+) => {
+  const keyName = `archive/${date.format("YYYY")}/${date.format(
+    "YYYY-MM"
+  )}/${date.format("YYYY-MM-DD")}.json`;
+  console.log(`s3://${env.s3.bucket}/${keyName}を保存します`);
+  const content = tweets.map(x => JSON.stringify(x)).join("\n");
+  await s3
+    .putObject({
+      Body: content,
+      Bucket: env.s3.bucket,
+      Key: keyName,
+      ContentType: "application/json; charset=utf-8"
+    })
+    .promise();
+};
+
+/**
  * 特定のユーザーのツイートを保存する。ツイートは日付ごとにグループ分けして次のキーで保存する。
  * raw/user/YYYY-MM-DD/YYYYMMDD.HHmmss.SSS_9999999999.json
  * （前半の日付はツイートの日付、後半のタムスタンプは現在日時。単に重複しないユニークな値として利用している）
@@ -100,48 +214,6 @@ export const getAllObjects = async (keyPrefix: string) => {
 };
 
 /**
- * S3のJSONを読み出してパースする。バケットはConfigで指定されたものを使う
- * @param keyName キー
- */
-export const getTweets = async (keyName: string): Promise<Types.TweetEx[]> => {
-  const data = await s3
-    .getObject({
-      Bucket: env.s3.bucket,
-      Key: keyName
-    })
-    .promise();
-
-  // 1行ごとにJSONが並んでいる形なので直接パースはできない
-  if (typeof data.Body === "string") {
-    return data.Body.split("\n").map(x => JSON.parse(x));
-  }
-  if (Buffer.isBuffer(data.Body)) {
-    const str = data.Body.toString();
-    return str.split("\n").map(x => JSON.parse(x));
-  }
-  throw new Error("wakannna-i");
-};
-
-export const putArchivedTweets = async (
-  date: moment.Moment,
-  tweets: Types.TweetEx[]
-) => {
-  const keyName = `archive/${date.format("YYYY")}/${date.format(
-    "YYYY-MM"
-  )}/${date.format("YYYY-MM-DD")}.json`;
-  console.log(`s3://${env.s3.bucket}/${keyName}を保存します`);
-  const content = tweets.map(x => JSON.stringify(x)).join("\n");
-  await s3
-    .putObject({
-      Body: content,
-      Bucket: env.s3.bucket,
-      Key: keyName,
-      ContentType: "application/json; charset=utf-8"
-    })
-    .promise();
-};
-
-/**
  * フォロイー・フォロワーのIDデータを保存する。タイムスタンプ付きのものと latest.json の2つを保存する
  */
 export const putFriendAndFollowerIds = async (
@@ -168,10 +240,12 @@ export const putFriendAndFollowerIds = async (
 };
 
 /**
- * 前回保存したフォロイー・フォロワーのIDデータを取得する。見つからなければnullが返される
+ * 前回保存したフォロイー・フォロワーのIDデータを取得する。見つからなければundefinedが返される
  */
 export const getLatestFriendFollowerIds = async () => {
-  return getContent("raw/ff/latest.json", Types.isFriendsAndFollowersIdsType);
+  return (
+    await getContent("raw/ff/latest.json", Types.isFriendsAndFollowersIdsType)
+  )?.data;
 };
 
 /**
@@ -180,59 +254,3 @@ export const getLatestFriendFollowerIds = async () => {
 export const getLatestFavoriteTweetIds = async () => {
   return getContent<string[]>("raw/event/favorites/latest.json");
 };
-
-/**
- * S3（バケットは環境変数で与えられたもの固定）からJSONデータを取得し、パースして返す。
- * データが見つからなかったとき、型チェックに通らなかったときはnullを返す
- * @param key
- * @param typeGuardFunction
- */
-async function getContent<T>(
-  key: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  typeGuardFunction?: (arg: any) => arg is T
-) {
-  let body = "";
-  try {
-    const data = await s3
-      .getObject({
-        Bucket: env.s3.bucket,
-        Key: key
-      })
-      .promise();
-    // data.Bodyは実際にはstringかBuffer
-    if (typeof data.Body === "string") {
-      body = data.Body;
-    }
-    if (Buffer.isBuffer(data.Body)) {
-      body = data.Body.toString("utf8");
-    }
-  } catch (e) {
-    console.error(e);
-    console.error(`s3://${env.s3.bucket}/${key} not found`);
-    return null;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let data: any = undefined;
-  try {
-    data = JSON.parse(body);
-  } catch (e) {
-    console.error(e);
-    console.error(`s3://${env.s3.bucket}/${key} is not a json`);
-    return null;
-  }
-
-  if (typeGuardFunction) {
-    if (typeGuardFunction(data)) {
-      return data;
-    } else {
-      console.error(
-        `s3://${env.s3.bucket}/${key} did'nt satisfy provided type guard function`
-      );
-      return null;
-    }
-  } else {
-    return data as T;
-  }
-}
