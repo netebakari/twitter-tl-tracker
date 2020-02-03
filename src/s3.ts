@@ -183,28 +183,38 @@ export const putTimelineTweets = async (tweets: Types.TweetEx[]) => {
 };
 
 /**
- * 指定した日付のツイートログの断片のキーを取得
+ * 指定した日付のツイートログの断片のキーとタイムスタンプを取得
  * @param date
  */
 export const getFragments = async (date: moment.Moment) => {
-  const dateStr = date.format("YYYY-MM-DD");
+  const dateStr = date.utcOffset(env.tweetOption.utfOffset).format("YYYY-MM-DD");
   const userTweets = await getAllObjects(`raw/user/${dateStr}/`);
   const homeTweets = await getAllObjects(`raw/home/${dateStr}/`);
   return { userTweets, homeTweets };
 };
 
-export const getAllObjects = async (keyPrefix: string) => {
-  console.log(`keyPrefix='${keyPrefix}' のオブジェクトを検索します`);
-  const firstChunk = await s3
-    .listObjectsV2({
-      Bucket: env.s3.bucket,
-      Prefix: keyPrefix
-    })
-    .promise();
+type GetFragmentsResultType = {
+  key: string;
+  lastModified?: moment.Moment;
+};
+
+/**
+ *
+ * @param keyPrefix
+ */
+export const getAllObjects = async (keyPrefix: string, bucketName?: string): Promise<GetFragmentsResultType[]> => {
+  bucketName = bucketName ?? env.s3.bucket;
+  console.log(`'s3://${bucketName}/${keyPrefix}*' のオブジェクトを検索します`);
+  const firstChunk = await s3.listObjectsV2({ Bucket: env.s3.bucket, Prefix: keyPrefix }).promise();
   if (!firstChunk.Contents) {
     return [];
   }
-  const keys = [firstChunk.Contents.map(x => x.Key)];
+
+  const simplify = (obj: AWS.S3.Object): GetFragmentsResultType => {
+    return { key: obj.Key ?? "", lastModified: util.dateToMoment(obj.LastModified) };
+  };
+
+  const result: GetFragmentsResultType[][] = [firstChunk.Contents.map(x => simplify(x))];
 
   // NextContinuationTokenがある限り繰り返し取得
   let continueToken = firstChunk.NextContinuationToken;
@@ -218,12 +228,12 @@ export const getAllObjects = async (keyPrefix: string) => {
       })
       .promise();
     if (chunk.Contents) {
-      keys.push(chunk.Contents.map(x => x.Key));
+      result.push(chunk.Contents.map(x => simplify(x)));
     }
     continueToken = chunk.NextContinuationToken;
   }
 
-  return _.flatMap(keys).filter(x => x) as string[];
+  return _.flatMap(result);
 };
 
 /**

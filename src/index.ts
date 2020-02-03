@@ -70,8 +70,8 @@ const archive = async (date: moment.Moment) => {
   console.log(moment());
   console.log(`ホームTLが${keys.homeTweets.length}件、ユーザーTLが${keys.userTweets.length}件見つかりました`);
   console.log("ホームTLのマージを行います");
-  for (const key of keys.homeTweets) {
-    const tweets = await s3.getTweets(key);
+  for (const item of keys.homeTweets) {
+    const tweets = await s3.getTweets(item.key);
     for (const tweet of tweets) {
       if (ids.indexOf(tweet.id_str) === -1) {
         ids.push(tweet.id_str);
@@ -81,8 +81,8 @@ const archive = async (date: moment.Moment) => {
   }
 
   console.log("ユーザーTLのマージを行います");
-  for (const key of keys.userTweets) {
-    const tweets = await s3.getTweets(key);
+  for (const item of keys.userTweets) {
+    const tweets = await s3.getTweets(item.key);
     for (const tweet of tweets) {
       if (ids.indexOf(tweet.id_str) === -1) {
         ids.push(tweet.id_str);

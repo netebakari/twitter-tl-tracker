@@ -74,3 +74,14 @@ export const groupByDate = (tweets: Types.TweetEx[]) => {
   }
   return result;
 };
+
+export const dateToMoment = (date?: Date): moment.Moment | undefined => {
+  if (!date) {
+    return undefined;
+  }
+  try {
+    return moment(date);
+  } catch (e) {
+    return undefined;
+  }
+};

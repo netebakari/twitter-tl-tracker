@@ -6,7 +6,7 @@ import * as myModule from "../src/index";
 import * as s3 from "../src/s3";
 import * as Types from "../src/types";
 import * as TwitTypes from "../src/types/twit";
-
+import * as util from "../src/util";
 describe("s3", () => {
   describe("getTextContent", () => {
     it("plain text", async () => {
@@ -129,6 +129,20 @@ describe("type guards", () => {
       const buffer = fs.readFileSync("test/fixtures/tweet2.json");
       const data = JSON.parse(buffer.toString("utf8"));
       assert.equal(TwitTypes.isTweet(data), true);
+    });
+  });
+});
+
+describe("util", () => {
+  describe("", () => {
+    it("test1", () => {
+      const date = new Date("2020-02-03T00:01:02+09:00");
+      const result = util.dateToMoment(date);
+      assert.equal(result?.toDate().getTime(), date.getTime());
+    });
+    it("test2", () => {
+      const result = util.dateToMoment(undefined);
+      assert.equal(result, undefined);
     });
   });
 });
