@@ -31,11 +31,7 @@ export const getStatusId = (daysCount: number) => {
  * @param tweets
  */
 export const getMinimumId = (tweets: Types.Tweet[]) => {
-  return tweets
-    .map(x => x.id_str)
-    .reduce((prev, current) =>
-      compareNumber(prev, current) < 0 ? prev : current
-    );
+  return tweets.map(x => x.id_str).reduce((prev, current) => (compareNumber(prev, current) < 0 ? prev : current));
 };
 
 /**
@@ -43,11 +39,7 @@ export const getMinimumId = (tweets: Types.Tweet[]) => {
  * @param tweets
  */
 export const getMaxId = (tweets: Types.Tweet[]) => {
-  return tweets
-    .map(x => x.id_str)
-    .reduce((prev, current) =>
-      compareNumber(prev, current) > 0 ? prev : current
-    );
+  return tweets.map(x => x.id_str).reduce((prev, current) => (compareNumber(prev, current) > 0 ? prev : current));
 };
 
 /**

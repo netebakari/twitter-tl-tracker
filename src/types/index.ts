@@ -1,9 +1,8 @@
 import * as twit from "twit";
+
 import * as TwitTypes from "./twit";
 
-type RequireOne<T, K extends keyof T = keyof T> = K extends keyof T
-  ? PartialRequire<T, K>
-  : never;
+type RequireOne<T, K extends keyof T = keyof T> = K extends keyof T ? PartialRequire<T, K> : never;
 type PartialRequire<O, K extends keyof O> = {
   [P in K]-?: O[P];
 } &
@@ -66,9 +65,7 @@ export interface TweetFetchResult {
   tweets: twit.Twitter.Status[];
 }
 
-export const isFriendsAndFollowersIdsType = (
-  arg: any
-): arg is FriendsAndFollowersIdsType => {
+export const isFriendsAndFollowersIdsType = (arg: any): arg is FriendsAndFollowersIdsType => {
   if (!arg) {
     return false;
   }

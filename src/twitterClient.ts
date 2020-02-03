@@ -14,9 +14,7 @@ const client = new Twit(env.twitterToken);
  * users/lookup を叩いてユーザー情報を取得する
  * @param userIds ユーザーIDの配列。100件ごとにまとめてAPIがコールされる
  */
-export const lookupUsers = async (
-  userIds: string[]
-): Promise<{ apiCallCount: number; users: Types.User[] }> => {
+export const lookupUsers = async (userIds: string[]): Promise<{ apiCallCount: number; users: Types.User[] }> => {
   const doPost = async (params: twit.Params): Promise<Types.User[]> => {
     const data = await client.post("users/lookup", params);
     if (TwitTypes.isUsers(data)) {
@@ -58,11 +56,7 @@ export const getFriendsOrFollowersIds = async (
   result.push(chunk.ids);
   let apiCallCount = 1;
   while (apiCallCount++ < maxApiCallCount && chunk.nextCursor) {
-    chunk = await _getFriendsOrFollowersId(
-      user,
-      friendsOrFollowers,
-      chunk.nextCursor
-    );
+    chunk = await _getFriendsOrFollowersId(user, friendsOrFollowers, chunk.nextCursor);
     result.push(chunk.ids);
   }
   return _.flatten(result);
@@ -100,9 +94,7 @@ const _getFriendsOrFollowersId = async (
  * 対象のユーザーのlikeを最大3200件取得する。
  * @param user ユーザー
  */
-export const getFavorites = async (
-  user: Types.UserType
-): Promise<{ apiCallCount: number; tweets: Types.Tweet[] }> => {
+export const getFavorites = async (user: Types.UserType): Promise<{ apiCallCount: number; tweets: Types.Tweet[] }> => {
   const firstChunk = await getTweets("Favorites", user, { sinceId: "100" });
   if (firstChunk.length < 180) {
     return { apiCallCount: 1, tweets: firstChunk };
@@ -158,18 +150,13 @@ export const getRecentTweets = async (
     }
     const newMinimumId = util.getMinimumId(chunk);
     // IDの最小値が更新できなかったか、IDの最小値が最初に与えたsinceIdと同等以下になったら終わり
-    if (
-      minimumId === newMinimumId ||
-      util.compareNumber(sinceId, newMinimumId) >= 0
-    ) {
+    if (minimumId === newMinimumId || util.compareNumber(sinceId, newMinimumId) >= 0) {
       break;
     }
     minimumId = newMinimumId;
   }
 
-  const tweets = _.flatten(chunks).filter(
-    x => util.compareNumber(x.id_str, sinceId) >= 0
-  );
+  const tweets = _.flatten(chunks).filter(x => util.compareNumber(x.id_str, sinceId) >= 0);
   return {
     apiCallCount,
     tweets
@@ -222,11 +209,7 @@ export const getTweets = async (
       endpoint = "favorites/list";
       break;
   }
-  console.log(
-    `TwitterClient#getTweets(): endpoint=${endpoint}, parameter=${JSON.stringify(
-      params
-    )}`
-  );
+  console.log(`TwitterClient#getTweets(): endpoint=${endpoint}, parameter=${JSON.stringify(params)}`);
 
   const result = await client.get(endpoint, params);
   if (TwitTypes.isTweets(result.data)) {
@@ -244,15 +227,10 @@ export const getTweets = async (
  * 3. serverTimestamp（"2018-08-11T12:34:45+0900"形式）を追加。これは取得日時
  * @param tweet
  */
-const alterTweet = (
-  tweets: Types.Tweet[],
-  serverTimestamp?: string
-): Types.TweetEx[] => {
+const alterTweet = (tweets: Types.Tweet[], serverTimestamp?: string): Types.TweetEx[] => {
   const _serverTimestamp = serverTimestamp || util.getCurrentTime();
   return tweets.map(tweet => {
-    const timestamp = moment(new Date(tweet.created_at)).utcOffset(
-      env.tweetOption.utfOffset
-    );
+    const timestamp = moment(new Date(tweet.created_at)).utcOffset(env.tweetOption.utfOffset);
     return {
       ...tweet,
       timestampLocal: timestamp.format(),

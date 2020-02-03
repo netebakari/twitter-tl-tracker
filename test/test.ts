@@ -26,21 +26,13 @@ describe("s3", () => {
 
   describe("getContent", () => {
     it("json1 (sigle tweet)", async () => {
-      const data = await s3.getContent<Types.TweetEx>(
-        "test/tweet1.json",
-        Types.isTweetEx,
-        "netebakari"
-      );
+      const data = await s3.getContent<Types.TweetEx>("test/tweet1.json", Types.isTweetEx, "netebakari");
       assert.equal(data?.data.id_str, "1204129214640906241");
       assert.equal(data?.timestamp?.format(), "2020-02-02T11:17:44+00:00");
     });
 
     it("json2 (sigle tweet)", async () => {
-      const data = await s3.getContent<Types.TweetEx>(
-        "test/tweet2.json",
-        Types.isTweetEx,
-        "netebakari"
-      );
+      const data = await s3.getContent<Types.TweetEx>("test/tweet2.json", Types.isTweetEx, "netebakari");
       assert.equal(data?.data.id_str, "1204129173507362818");
       assert.equal(data?.timestamp?.format(), "2020-02-02T11:17:44+00:00");
     });

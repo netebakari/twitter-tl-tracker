@@ -59,9 +59,7 @@ export const isUsers = (arg: any): arg is twit.Twitter.User[] => {
   return arg.every(x => isUser(x));
 };
 
-export const isFriendsOrFollowersIdResultType = (
-  arg: any
-): arg is FriendsOrFollowersIdResultType => {
+export const isFriendsOrFollowersIdResultType = (arg: any): arg is FriendsOrFollowersIdResultType => {
   if (!arg) {
     return false;
   }

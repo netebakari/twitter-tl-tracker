@@ -90,9 +90,7 @@ export async function getContent<T>(
     if (typeGuardFunction(data)) {
       return { data: data, timestamp: raw.timestamp };
     } else {
-      console.error(
-        `s3://${bucketName}/${key} did'nt satisfy provided type guard function`
-      );
+      console.error(`s3://${bucketName}/${key} did'nt satisfy provided type guard function`);
       return undefined;
     }
   } else {
@@ -106,10 +104,7 @@ export async function getContent<T>(
  * @param key キー
  * @param bucketName バケット名。省略時は環境変数で指定されたもの
  */
-export const getTweets = async (
-  key: string,
-  bucketName?: string
-): Promise<Types.TweetEx[]> => {
+export const getTweets = async (key: string, bucketName?: string): Promise<Types.TweetEx[]> => {
   bucketName = bucketName ?? env.s3.bucket;
   const raw = await getTextContent(key, bucketName);
   if (!raw) {
@@ -123,10 +118,7 @@ export const getTweets = async (
   }
 };
 
-export const putArchivedTweets = async (
-  date: moment.Moment,
-  tweets: Types.TweetEx[]
-) => {
+export const putArchivedTweets = async (date: moment.Moment, tweets: Types.TweetEx[]) => {
   date.utcOffset(env.tweetOption.utfOffset);
   const year = date.format("YYYY");
   const yearMonth = date.format("YYYY-MM");
@@ -237,10 +229,7 @@ export const getAllObjects = async (keyPrefix: string) => {
 /**
  * フォロイー・フォロワーのIDデータを保存する。タイムスタンプ付きのものと latest.json の2つを保存する
  */
-export const putFriendAndFollowerIds = async (
-  timestamp: moment.Moment,
-  ids: Types.FriendsAndFollowersIdsType
-) => {
+export const putFriendAndFollowerIds = async (timestamp: moment.Moment, ids: Types.FriendsAndFollowersIdsType) => {
   await s3
     .putObject({
       Bucket: env.s3.bucket,
@@ -264,9 +253,7 @@ export const putFriendAndFollowerIds = async (
  * 前回保存したフォロイー・フォロワーのIDデータを取得する。見つからなければundefinedが返される
  */
 export const getLatestFriendFollowerIds = async () => {
-  return (
-    await getContent("raw/ff/latest.json", Types.isFriendsAndFollowersIdsType)
-  )?.data;
+  return (await getContent("raw/ff/latest.json", Types.isFriendsAndFollowersIdsType))?.data;
 };
 
 /**
