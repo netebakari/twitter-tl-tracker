@@ -14,6 +14,14 @@ describe("s3", () => {
       assert.equal(data?.body, "Hello, Happy World!");
       assert.equal(data?.timestamp?.format(), "2020-02-02T11:19:12+00:00");
     });
+
+    it("test method (Buffer)", async () => {
+      const str = "Hello, Hello, Happy World!";
+      const buffer = Buffer.from(str, "utf-8");
+      const data = await s3.getTextContent(buffer, "no-such-bucket-but-ignored");
+      assert.equal(data?.body, str);
+      assert.equal(data?.timestamp, undefined);
+    });
   });
 
   describe("getContent", () => {

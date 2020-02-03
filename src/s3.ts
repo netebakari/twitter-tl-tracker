@@ -12,13 +12,18 @@ const s3 = new AWS.S3({ region: env.s3.region });
 /**
  * S3（バケットは環境変数で与えられたもの固定）からテキストデータを取得してタイムスタンプとともに返す。
  * データが見つからなかったとき、stringでもBufferでもないものが返ってきたときはundefinedを返す
- * @param key
- * @param typeGuardFunction
+ * @param key S3オブジェクトのキー。Bufferを与えたときはUTF-8でエンコードした文字列をそのまま返す（テスト用）
+ * @param bucketName テスト用。省略時は環境変数で指定したバケットが利用される
  */
 export const getTextContent = async (
-  key: string,
+  key: string | Buffer,
   bucketName?: string
 ): Promise<{ body: string; timestamp?: moment.Moment } | undefined> => {
+  // テスト用
+  if (Buffer.isBuffer(key)) {
+    return { body: key.toString("utf-8") };
+  }
+
   bucketName = bucketName ?? env.s3.bucket;
   try {
     let body = "";
@@ -32,7 +37,7 @@ export const getTextContent = async (
     if (typeof data.Body === "string") {
       body = data.Body;
     } else if (Buffer.isBuffer(data.Body)) {
-      body = data.Body.toString("utf8");
+      body = data.Body.toString("utf-8");
     } else {
       console.error(`s3://${bucketName}/${key} may not be text data`);
       return undefined;
@@ -57,11 +62,12 @@ export const getTextContent = async (
 /**
  * S3（バケットは環境変数で与えられたもの固定）からJSONデータを取得し、パースして返す。
  * データが見つからなかったとき、型チェックに通らなかったときはundefinedを返す
- * @param key
+ * @param key S3オブジェクトのキー。Bufferを与えたときはUTF-8でエンコードした文字列をS3から取得したとみなす（テスト用）
  * @param typeGuardFunction
+ * @param bucketName テスト用。省略時は環境変数で指定したバケットが利用される
  */
 export async function getContent<T>(
-  key: string,
+  key: string | Buffer,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   typeGuardFunction?: (arg: any) => arg is T,
   bucketName?: string
