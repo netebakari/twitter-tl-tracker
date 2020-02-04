@@ -101,10 +101,10 @@ export async function getContent<T>(
 /**
  * S3にJSON Linesとして保存されたツイートのリストを読み出してパースする。
  * オブジェクトが見つからなかった場合、パースに失敗した場合は例外をスローする
- * @param key キー
- * @param bucketName バケット名。省略時は環境変数で指定されたもの
+ * @param key S3オブジェクトのキー。Bufferを与えたときはUTF-8でエンコードした文字列をS3から取得したとみなす（テスト用）
+ * @param bucketName テスト用。省略時は環境変数で指定したバケットが利用される
  */
-export const getTweets = async (key: string, bucketName?: string): Promise<Types.TweetEx[]> => {
+export const getTweets = async (key: string | Buffer, bucketName?: string): Promise<Types.TweetEx[]> => {
   bucketName = bucketName ?? env.s3.bucket;
   const raw = await getTextContent(key, bucketName);
   if (!raw) {
@@ -188,12 +188,12 @@ export const putTimelineTweets = async (tweets: Types.TweetEx[]) => {
  */
 export const getFragments = async (date: moment.Moment) => {
   const dateStr = date.utcOffset(env.tweetOption.utfOffset).format("YYYY-MM-DD");
-  const userTweets = await getAllObjects(`raw/user/${dateStr}/`);
-  const homeTweets = await getAllObjects(`raw/home/${dateStr}/`);
+  const userTweets = await listAllObjects(`raw/user/${dateStr}/`);
+  const homeTweets = await listAllObjects(`raw/home/${dateStr}/`);
   return { userTweets, homeTweets };
 };
 
-type GetFragmentsResultType = {
+type SimplifiedS3Object = {
   key: string;
   lastModified?: moment.Moment;
 };
@@ -202,7 +202,7 @@ type GetFragmentsResultType = {
  *
  * @param keyPrefix
  */
-export const getAllObjects = async (keyPrefix: string, bucketName?: string): Promise<GetFragmentsResultType[]> => {
+export const listAllObjects = async (keyPrefix: string, bucketName?: string): Promise<SimplifiedS3Object[]> => {
   bucketName = bucketName ?? env.s3.bucket;
   console.log(`'s3://${bucketName}/${keyPrefix}*' のオブジェクトを検索します`);
   const firstChunk = await s3.listObjectsV2({ Bucket: env.s3.bucket, Prefix: keyPrefix }).promise();
@@ -210,11 +210,11 @@ export const getAllObjects = async (keyPrefix: string, bucketName?: string): Pro
     return [];
   }
 
-  const simplify = (obj: AWS.S3.Object): GetFragmentsResultType => {
+  const simplify = (obj: AWS.S3.Object): SimplifiedS3Object => {
     return { key: obj.Key ?? "", lastModified: util.dateToMoment(obj.LastModified) };
   };
 
-  const result: GetFragmentsResultType[][] = [firstChunk.Contents.map(x => simplify(x))];
+  const result: SimplifiedS3Object[][] = [firstChunk.Contents.map(x => simplify(x))];
 
   // NextContinuationTokenがある限り繰り返し取得
   let continueToken = firstChunk.NextContinuationToken;
@@ -271,4 +271,26 @@ export const getLatestFriendFollowerIds = async () => {
  */
 export const getLatestFavoriteTweetIds = async () => {
   return getContent<string[]>("raw/event/favorites/latest.json");
+};
+
+export const mergeTweetFragments = (homeTL: SimplifiedS3Object[], userTL: SimplifiedS3Object[]) => {
+  homeTL.sort(compareSimplifiedS3ObjectByTimestamp);
+  userTL.sort(compareSimplifiedS3ObjectByTimestamp);
+};
+
+export const compareSimplifiedS3ObjectByTimestamp = (obj1: SimplifiedS3Object, obj2: SimplifiedS3Object) => {
+  // どちらのタイムスタンプもundefinedなら0
+  if (obj1.lastModified === undefined && obj2.lastModified === undefined) {
+    return 0;
+  }
+
+  // undefinedは先頭に
+  if (obj1.lastModified === undefined) {
+    return -1;
+  }
+  if (obj2.lastModified === undefined) {
+    return 1;
+  }
+
+  return obj1.lastModified.diff(obj2.lastModified);
 };

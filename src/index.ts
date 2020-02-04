@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // eslint-disable-next-line import/no-unresolved
 import * as LambdaType from "aws-lambda";
 import _ from "lodash";
