@@ -30,7 +30,7 @@ export const getTextContent = async (
     const data = await s3
       .getObject({
         Bucket: bucketName,
-        Key: key
+        Key: key,
       })
       .promise();
     // data.Bodyは実際にはstringかBuffer
@@ -110,7 +110,7 @@ export const getTweets = async (key: string | Buffer, bucketName?: string): Prom
   if (!raw) {
     throw new Error(`s3://${bucketName}/${key} is not found or not text data`);
   }
-  const result = raw.body.split("\n").map(x => JSON.parse(x));
+  const result = raw.body.split("\n").map((x) => JSON.parse(x));
   if (Types.isTweetExArray(result)) {
     return result;
   } else {
@@ -125,13 +125,13 @@ export const putArchivedTweets = async (date: moment.Moment, tweets: Types.Tweet
   const yearMonthDate = date.format("YYYY-MM-DD");
   const key = `archive/${year}/${yearMonth}/${yearMonthDate}.json`;
   console.log(`s3://${env.s3.bucket}/${key}を保存します`);
-  const content = tweets.map(x => JSON.stringify(x)).join("\n");
+  const content = tweets.map((x) => JSON.stringify(x)).join("\n");
   await s3
     .putObject({
       Body: content,
       Bucket: env.s3.bucket,
       Key: key,
-      ContentType: "application/json; charset=utf-8"
+      ContentType: "application/json; charset=utf-8",
     })
     .promise();
 };
@@ -144,7 +144,7 @@ export const putArchivedTweets = async (date: moment.Moment, tweets: Types.Tweet
  */
 export const putUserTweets = async (tweets: Types.TweetEx[]) => {
   for (const chunk of util.groupByDate(tweets)) {
-    const content = chunk.tweets.map(x => JSON.stringify(x)).join("\n");
+    const content = chunk.tweets.map((x) => JSON.stringify(x)).join("\n");
     const now = moment().format("YYYYMMDD.HHmmss.SSS");
     const userId = chunk.tweets[0].user.id_str;
     const keyName = `raw/user/${chunk.date}/${now}_${userId}.json`;
@@ -154,7 +154,7 @@ export const putUserTweets = async (tweets: Types.TweetEx[]) => {
         Body: content,
         Bucket: env.s3.bucket,
         Key: keyName,
-        ContentType: "application/json; charset=utf-8"
+        ContentType: "application/json; charset=utf-8",
       })
       .promise();
   }
@@ -167,7 +167,7 @@ export const putUserTweets = async (tweets: Types.TweetEx[]) => {
  */
 export const putTimelineTweets = async (tweets: Types.TweetEx[]) => {
   for (const chunk of util.groupByDate(tweets)) {
-    const content = chunk.tweets.map(x => JSON.stringify(x)).join("\n");
+    const content = chunk.tweets.map((x) => JSON.stringify(x)).join("\n");
     const now = moment().format("YYYYMMDD.HHmmss.SSS");
     const keyName = `raw/home/${chunk.date}/${now}.json`;
     console.log(`s3://${env.s3.bucket}/${keyName}を保存します`);
@@ -176,7 +176,7 @@ export const putTimelineTweets = async (tweets: Types.TweetEx[]) => {
         Body: content,
         Bucket: env.s3.bucket,
         Key: keyName,
-        ContentType: "application/json; charset=utf-8"
+        ContentType: "application/json; charset=utf-8",
       })
       .promise();
   }
@@ -214,7 +214,7 @@ export const listAllObjects = async (keyPrefix: string, bucketName?: string): Pr
     return { key: obj.Key ?? "", lastModified: util.dateToMoment(obj.LastModified) };
   };
 
-  const result: SimplifiedS3Object[][] = [firstChunk.Contents.map(x => simplify(x))];
+  const result: SimplifiedS3Object[][] = [firstChunk.Contents.map((x) => simplify(x))];
 
   // NextContinuationTokenがある限り繰り返し取得
   let continueToken = firstChunk.NextContinuationToken;
@@ -224,11 +224,11 @@ export const listAllObjects = async (keyPrefix: string, bucketName?: string): Pr
       .listObjectsV2({
         Bucket: env.s3.bucket,
         Prefix: keyPrefix,
-        ContinuationToken: continueToken
+        ContinuationToken: continueToken,
       })
       .promise();
     if (chunk.Contents) {
-      result.push(chunk.Contents.map(x => simplify(x)));
+      result.push(chunk.Contents.map((x) => simplify(x)));
     }
     continueToken = chunk.NextContinuationToken;
   }
@@ -245,7 +245,7 @@ export const putFriendAndFollowerIds = async (timestamp: moment.Moment, ids: Typ
       Bucket: env.s3.bucket,
       Key: `raw/ff/latest.json`,
       Body: JSON.stringify(ids),
-      ContentType: "application/json; charset=utf-8"
+      ContentType: "application/json; charset=utf-8",
     })
     .promise();
 
@@ -254,7 +254,7 @@ export const putFriendAndFollowerIds = async (timestamp: moment.Moment, ids: Typ
       Bucket: env.s3.bucket,
       Key: `raw/ff/FF_${timestamp.format("YYYY-MM-DD_HHmm")}.json`,
       Body: JSON.stringify(ids),
-      ContentType: "application/json; charset=utf-8"
+      ContentType: "application/json; charset=utf-8",
     })
     .promise();
 };

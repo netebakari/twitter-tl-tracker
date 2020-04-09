@@ -40,7 +40,7 @@ exports.event = async (event: any, context: LambdaType.Context) => {
   // S3に保存しておいた最後のf/fを取得（IDのみ）
   const latest = (await s3.getLatestFriendFollowerIds()) || {
     friendsIds,
-    followersIds
+    followersIds,
   }; // 初回実行時は差分なしと判定される
 
   // 差分のIDを算出
@@ -163,8 +163,9 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
   let loopCount = 1;
   while (totalApiCallCount <= maxApiCallCount && totalFailCount < 2 && context.getRemainingTimeInMillis() > 3000) {
     console.log(
-      `ループ${loopCount++}回目... API呼び出し回数: ${totalApiCallCount}, エラー: ${totalFailCount}）, 経過ミリ秒=${new Date().getTime() -
-        startTimeInMillis}`
+      `ループ${loopCount++}回目... API呼び出し回数: ${totalApiCallCount}, エラー: ${totalFailCount}）, 経過ミリ秒=${
+        new Date().getTime() - startTimeInMillis
+      }`
     );
     const chunk = await processSingleQueueMessage();
     if (chunk.apiCallCount === 0) {
@@ -182,15 +183,15 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
   }
 
   console.log("ループを抜けました");
-  const tweets = _.flatten(result.map(x => x.tweets));
-  const userIds = _.uniq(tweets.map(x => x.user.id_str));
+  const tweets = _.flatten(result.map((x) => x.tweets));
+  const userIds = _.uniq(tweets.map((x) => x.user.id_str));
 
   console.log(`${userIds.length}人のユーザーTLから合計${tweets.length}件のツイートを取得しました。S3に保存します`);
   await s3.putUserTweets(tweets);
 
   console.log("DynamoDBを更新します");
   for (const userId of userIds) {
-    const userTweets = tweets.filter(x => x.user.id_str === userId);
+    const userTweets = tweets.filter((x) => x.user.id_str === userId);
     const maxId = util.getMaxId(userTweets);
     const user = userTweets[0].user;
     console.log(`@${user.screen_name}(id=${user.id_str})のsinceIdを${maxId}に更新します`);
@@ -198,7 +199,7 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
   }
 
   console.log("キューを削除します");
-  for (const receiptHandle of result.map(x => x.receiptHandle)) {
+  for (const receiptHandle of result.map((x) => x.receiptHandle)) {
     await sqs.deleteMessage(receiptHandle);
   }
 
@@ -268,8 +269,8 @@ const processSingleQueueMessage = async (): Promise<UserTweetsFetchResultType> =
       apiCallCount: apiCallCount,
       tweetData: {
         tweets: tweets,
-        receiptHandle: queueMessage.receiptHandle
-      }
+        receiptHandle: queueMessage.receiptHandle,
+      },
     };
   } catch (e) {
     if (e.message.indexOf("Not authorized") >= 0) {

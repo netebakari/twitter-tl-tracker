@@ -6,7 +6,7 @@ const sqs = new AWS.SQS({ region: env.sqs.region });
 export const send = async (userId: string) => {
   const params = {
     MessageBody: userId,
-    QueueUrl: env.sqs.queueUrl
+    QueueUrl: env.sqs.queueUrl,
   };
 
   return sqs.sendMessage(params).promise();
@@ -15,13 +15,13 @@ export const send = async (userId: string) => {
 export const receiveMessage = async () => {
   const params = {
     QueueUrl: env.sqs.queueUrl,
-    MaxNumberOfMessages: 1
+    MaxNumberOfMessages: 1,
   };
   const data = await sqs.receiveMessage(params).promise();
   if (Array.isArray(data.Messages) && data.Messages.length > 0) {
     return {
       userId: data.Messages[0].Body as string,
-      receiptHandle: data.Messages[0].ReceiptHandle as string
+      receiptHandle: data.Messages[0].ReceiptHandle as string,
     };
   } else {
     return null;
@@ -31,7 +31,7 @@ export const receiveMessage = async () => {
 export const deleteMessage = async (receiptHandle: string) => {
   const params = {
     QueueUrl: env.sqs.queueUrl,
-    ReceiptHandle: receiptHandle
+    ReceiptHandle: receiptHandle,
   };
   return sqs.deleteMessage(params).promise();
 };
@@ -42,7 +42,7 @@ export const deleteMessage = async (receiptHandle: string) => {
 export const getMessageCount = async () => {
   const params = {
     QueueUrl: env.sqs.queueUrl,
-    AttributeNames: ["ApproximateNumberOfMessages"]
+    AttributeNames: ["ApproximateNumberOfMessages"],
   };
 
   const data = await sqs.getQueueAttributes(params).promise();

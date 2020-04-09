@@ -90,7 +90,7 @@ describe("type guards", () => {
         screenName: "fugafuga",
         sinceId: "1200000000000000000",
         TTL: 1500000000,
-        updatedAt: "2020-01-19T20:00:00+09:00"
+        updatedAt: "2020-01-19T20:00:00+09:00",
       };
 
       assert.equal(Types.isUserOnDb(record), true);
@@ -102,7 +102,7 @@ describe("type guards", () => {
         name: "*My Timeline*",
         screenName: "*My Timeline*",
         sinceId: "1200000000000000000",
-        updatedAt: "2020-01-19T20:00:00+09:00"
+        updatedAt: "2020-01-19T20:00:00+09:00",
       };
 
       assert.equal(Types.isUserOnDb(record), true);
@@ -113,7 +113,7 @@ describe("type guards", () => {
     it("ok", () => {
       const data: Types.FriendsAndFollowersIdsType = {
         followersIds: ["1", "2"],
-        friendsIds: ["3", "4"]
+        friendsIds: ["3", "4"],
       };
       assert.equal(Types.isFriendsAndFollowersIdsType(data), true);
     });
@@ -121,17 +121,17 @@ describe("type guards", () => {
     it("empty list", () => {
       const data: Types.FriendsAndFollowersIdsType = {
         followersIds: [],
-        friendsIds: []
+        friendsIds: [],
       };
       assert.equal(Types.isFriendsAndFollowersIdsType(data), true);
     });
 
     it("must have entity", () => {
       const data1 = {
-        followersIds: ["1", "2"]
+        followersIds: ["1", "2"],
       };
       const data2 = {
-        friendsIds: ["1", "2"]
+        friendsIds: ["1", "2"],
       };
       assert.equal(Types.isFriendsAndFollowersIdsType(data1), false);
       assert.equal(Types.isFriendsAndFollowersIdsType(data2), false);
@@ -145,7 +145,7 @@ describe("type guards", () => {
     it("includes other than string", () => {
       const data: any = {
         followersIds: ["1", 2],
-        friendsIds: []
+        friendsIds: [],
       };
       assert.equal(Types.isFriendsAndFollowersIdsType(data), false);
     });

@@ -111,7 +111,7 @@ export const isTweetExArray = (arg: any): arg is TweetEx[] => {
   if (!Array.isArray(arg)) {
     return false;
   }
-  return arg.every(x => isTweetEx(x));
+  return arg.every((x) => isTweetEx(x));
 };
 
 export const isTweetEx = (arg: any): arg is TweetEx => {
