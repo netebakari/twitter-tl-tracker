@@ -34,10 +34,6 @@ const getEnvAsInteger = (name: string) => {
   return num;
 };
 
-const twitter_consumer_key          = getEnv("twitter_consumer_key");
-const twitter_consumer_secret       = getEnv("twitter_consumer_secret");
-const twitter_access_token          = getEnv("twitter_access_token");
-const twitter_access_token_secret   = getEnv("twitter_access_token_secret");
 const dynamoDb_region               = getEnv("dynamoDb_region");
 const dynamoDb_tableName            = getEnv("dynamoDb_tableName");
 const dynamoDb_ttlInDays            = getEnvAsInteger("dynamoDb_ttlInDays");
@@ -49,13 +45,6 @@ const options_daysToArchive         = getEnvAsInteger("options_daysToArchive");
 const options_includeFollowers      = getEnvAsBoolean("options_includeFollowers");
 const options_utfOffset             = getEnvAsInteger("options_utfOffset");
 const options_myUserIdStr           = getEnv("options_myUserIdStr");
-
-export const twitterToken = {
-  consumer_key: twitter_consumer_key,
-  consumer_secret: twitter_consumer_secret,
-  access_token: twitter_access_token,
-  access_token_secret: twitter_access_token_secret
-};
 
 export const dynamoDb = {
   region: dynamoDb_region,

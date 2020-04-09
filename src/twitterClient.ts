@@ -4,11 +4,12 @@ import moment from "moment";
 import Twit, * as twit from "twit";
 
 import * as env from "./env";
+import * as token from "./twitterToken";
 import * as Types from "./types";
 import * as TwitTypes from "./types/twit";
 import * as util from "./util";
 
-const client = new Twit(env.twitterToken);
+const client = new Twit(token.twitterToken);
 
 /**
  * users/lookup を叩いてユーザー情報を取得する
@@ -32,7 +33,7 @@ export const lookupUsers = async (userIds: string[]): Promise<{ apiCallCount: nu
     const params = {
       user_id: userIdsPart.join(","),
       include_entities: true,
-      tweet_mode: "extended"
+      tweet_mode: "extended",
     };
     apiCallCount++;
     chunks.push(await doPost(params));
@@ -156,10 +157,10 @@ export const getRecentTweets = async (
     minimumId = newMinimumId;
   }
 
-  const tweets = _.flatten(chunks).filter(x => util.compareNumber(x.id_str, sinceId) >= 0);
+  const tweets = _.flatten(chunks).filter((x) => util.compareNumber(x.id_str, sinceId) >= 0);
   return {
     apiCallCount,
-    tweets
+    tweets,
   };
 };
 
@@ -178,7 +179,7 @@ export const getTweets = async (
     count: 200,
     include_rts: true,
     exclude_replies: false,
-    tweet_mode: "extended"
+    tweet_mode: "extended",
   };
   if (condition.sinceId) {
     params.since_id = condition.sinceId;
@@ -229,13 +230,13 @@ export const getTweets = async (
  */
 const alterTweet = (tweets: Types.Tweet[], serverTimestamp?: string): Types.TweetEx[] => {
   const _serverTimestamp = serverTimestamp || util.getCurrentTime();
-  return tweets.map(tweet => {
+  return tweets.map((tweet) => {
     const timestamp = moment(new Date(tweet.created_at)).utcOffset(env.tweetOption.utfOffset);
     return {
       ...tweet,
       timestampLocal: timestamp.format(),
       dateLocal: timestamp.format("YYYY-MM-DD"),
-      serverTimestamp: _serverTimestamp
+      serverTimestamp: _serverTimestamp,
     };
   });
 };
