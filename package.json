@@ -4,9 +4,9 @@
   "description": "Twitter Timeline Tracker",
   "main": "index.js",
   "scripts": {
+    "start": "node dist/src/cli/index.js",
     "user": "node dist/src/cli/index.js user",
     "home": "node dist/src/cli/index.js home",
-    "start": "node dist/src/cli/exec.js",
     "hourly": "node dist/src/cli/index.js hourly",
     "snapshot": "node dist/src/cli/index.js snapshot",
     "archive": "node dist/src/cli/index.js archive",

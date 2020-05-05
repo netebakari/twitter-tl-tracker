@@ -24,9 +24,13 @@ exports.handler = async (event: any, context: LambdaType.Context) => {
  */
 exports.archive = async (event: any, context: LambdaType.Context) => {
   console.log("処理開始");
+  console.log(event);
 
   // 引数 daysToBack で指定されていたらその日数だけ戻る（0なら当日、1なら1日前など）。指定がなかったら設定値
-  const daysToBack = +event.daysToBack || env.tweetOption.daysToArchive;
+  const daysToBack = +(event.daysToBack ?? env.tweetOption.daysToArchive);
+  for (let i = daysToBack; i >= 0; i--) {
+    await s3.archive(moment().add(-i, "days"), event.destPath);
+  }
 };
 
 /**
@@ -57,46 +61,6 @@ exports.event = async (event: any, context: LambdaType.Context) => {
 
   const now = moment().utcOffset(env.tweetOption.utfOffset);
   //await s3.putFriendAndFollowerIds(now, {friendsIds, followersIds});
-};
-
-/**
- * 指定された日のログをマージして1個のJSONにする。この処理に限ってはS3へのアクセス権限だけあればいい
- * @param date
- */
-const archive = async (date: moment.Moment) => {
-  console.log(`${date.format("YYYY-MM-DD")}のログを処理します`);
-  const keys = await s3.getFragments(date);
-  const allTweets: Types.TweetEx[] = [];
-  const ids: string[] = [];
-  console.log(moment());
-  console.log(`ホームTLが${keys.homeTweets.length}件、ユーザーTLが${keys.userTweets.length}件見つかりました`);
-  console.log("ホームTLのマージを行います");
-  for (const item of keys.homeTweets) {
-    const tweets = await s3.getTweets(item.key);
-    for (const tweet of tweets) {
-      if (ids.indexOf(tweet.id_str) === -1) {
-        ids.push(tweet.id_str);
-        allTweets.push(tweet);
-      }
-    }
-  }
-
-  console.log("ユーザーTLのマージを行います");
-  for (const item of keys.userTweets) {
-    const tweets = await s3.getTweets(item.key);
-    for (const tweet of tweets) {
-      if (ids.indexOf(tweet.id_str) === -1) {
-        ids.push(tweet.id_str);
-        allTweets.push(tweet);
-      }
-    }
-  }
-
-  console.log("マージが終わりました。ソートします");
-  allTweets.sort((a, b) => util.compareNumber(a.id_str, b.id_str));
-  console.log("ソートが終わりました。アップロードします");
-  await s3.putArchivedTweets(date, allTweets);
-  return true;
 };
 
 /**

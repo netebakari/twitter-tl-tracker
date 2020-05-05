@@ -1,4 +1,5 @@
 import * as AWS from "aws-sdk";
+import * as fs from "fs";
 import * as _ from "lodash";
 import moment from "moment";
 
@@ -278,6 +279,11 @@ export const mergeTweetFragments = (homeTL: SimplifiedS3Object[], userTL: Simpli
   userTL.sort(compareSimplifiedS3ObjectByTimestamp);
 };
 
+/**
+ * S3のオブジェクトをタイムスタンプの昇順でソートする
+ * @param obj1
+ * @param obj2
+ */
 export const compareSimplifiedS3ObjectByTimestamp = (obj1: SimplifiedS3Object, obj2: SimplifiedS3Object) => {
   // どちらのタイムスタンプもundefinedなら0
   if (obj1.lastModified === undefined && obj2.lastModified === undefined) {
@@ -293,4 +299,53 @@ export const compareSimplifiedS3ObjectByTimestamp = (obj1: SimplifiedS3Object, o
   }
 
   return obj1.lastModified.diff(obj2.lastModified);
+};
+
+/**
+ * 指定された日のログをマージして1個のJSONにする。この処理に限ってはS3へのアクセス権限だけあればいい
+ * @param date
+ * @param localPath 省略可。S3ではなくローカルに出力する際のパスを指定する。パス区切り文字で終わること
+ */
+export const archive = async (date: moment.Moment, localPath?: string) => {
+  console.log(`${date.format("YYYY-MM-DD")}のログを処理します`);
+  const keys = await getFragments(date);
+  const allTweets: Types.TweetEx[] = [];
+  const ids: string[] = [];
+  console.log(`ホームTLが${keys.homeTweets.length}件、ユーザーTLが${keys.userTweets.length}件見つかりました`);
+  console.log("ホームTLのマージを行います");
+  for (const item of keys.homeTweets) {
+    const tweets = await getTweets(item.key);
+    for (const tweet of tweets) {
+      if (ids.indexOf(tweet.id_str) === -1) {
+        ids.push(tweet.id_str);
+        allTweets.push(tweet);
+      }
+    }
+  }
+
+  console.log("ユーザーTLのマージを行います");
+  for (const item of keys.userTweets) {
+    const tweets = await getTweets(item.key);
+    for (const tweet of tweets) {
+      if (ids.indexOf(tweet.id_str) === -1) {
+        ids.push(tweet.id_str);
+        allTweets.push(tweet);
+      }
+    }
+  }
+
+  console.log("マージが終わりました。ソートします");
+  allTweets.sort((a, b) => util.compareNumber(a.id_str, b.id_str));
+
+  if (!localPath) {
+    console.log("ソートが終わりました。アップロードします");
+    await putArchivedTweets(date, allTweets);
+  } else {
+    console.log("ソートが終わりました。ファイルに書き出します");
+    const filename = `${localPath}${date.format("YYYY-MM-DD")}.json`;
+    console.log(`${filename} を保存します`);
+    const content = allTweets.map((x) => JSON.stringify(x)).join("\n");
+    fs.writeFileSync(filename, Buffer.from(content, "utf-8"));
+  }
+  return true;
 };

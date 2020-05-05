@@ -2,7 +2,7 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const _module = require("../index");
 // import * as _module from "../index";
-const _event = {};
+const _event: any = {};
 
 /**
  * コマンドラインからの実行用
@@ -34,6 +34,7 @@ const _event = {};
     }
 
     case "archive": {
+      _event.destPath = process.argv[3];
       const result = await _module.archive(_event);
       console.log(result);
       break;
