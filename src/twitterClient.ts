@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import * as _ from "lodash";
 import moment from "moment";
-import Twit, * as twit from "twit";
+import * as twit from "twit";
+import Twitter from "twitter-lite";
 
 import * as env from "./env";
 import * as token from "./twitterToken";
@@ -9,7 +10,7 @@ import * as Types from "./types";
 import * as TwitTypes from "./types/twit";
 import * as util from "./util";
 
-const client = new Twit(token.twitterToken);
+const client = new Twitter(token.twitterToken);
 
 /**
  * users/lookup を叩いてユーザー情報を取得する

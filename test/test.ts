@@ -1,13 +1,12 @@
 import * as assert from "assert";
 import * as fs from "fs";
-import * as mocha from "mocha";
 
-import * as myModule from "../src/index";
 import * as s3 from "../src/s3";
 import * as Types from "../src/types";
 import * as TwitTypes from "../src/types/twit";
 import * as util from "../src/util";
 import moment = require("moment");
+import * as Twitter from "../src/twitterClient";
 
 describe("s3", () => {
   describe("getTextContent", () => {
@@ -176,6 +175,15 @@ describe("util", () => {
     it("test2", () => {
       const result = util.dateToMoment(undefined);
       assert.equal(result, undefined);
+    });
+  });
+});
+
+describe("Twitter API test (call APIs actually)", () => {
+  describe("lookupUsers", () => {
+    it("@twitter", async () => {
+      const result = await Twitter.lookupUsers(["783214"]);
+      assert.ok("OK");
     });
   });
 });

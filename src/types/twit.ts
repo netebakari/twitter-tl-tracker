@@ -25,7 +25,7 @@ export const isTweets = (arg: any): arg is twit.Twitter.Status[] => {
   if (!Array.isArray(arg)) {
     return false;
   }
-  return arg.every(x => isTweet(x));
+  return arg.every((x) => isTweet(x));
 };
 
 /**
@@ -56,7 +56,7 @@ export const isUsers = (arg: any): arg is twit.Twitter.User[] => {
   if (!Array.isArray(arg)) {
     return false;
   }
-  return arg.every(x => isUser(x));
+  return arg.every((x) => isUser(x));
 };
 
 export const isFriendsOrFollowersIdResultType = (arg: any): arg is FriendsOrFollowersIdResultType => {
