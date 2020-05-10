@@ -27,9 +27,7 @@ export const updateTImelineRecord = async (sinceId: string) => {
     sinceId: sinceId,
     updatedAt: now.format()
   };
-  return dynamoClient
-    .put({ TableName: env.dynamoDb.tableName, Item: record })
-    .promise();
+  return dynamoClient.put({ TableName: env.dynamoDb.tableName, Item: record }).promise();
 };
 
 /**
@@ -52,9 +50,7 @@ export const getUserById = async (id_str: string) => {
   if (Types.isUserOnDb(found)) {
     return found;
   } else {
-    console.error(
-      "DynamoDB record found but type guard function returns false"
-    );
+    console.error("DynamoDB record found but type guard function returns false");
     console.error(JSON.stringify(found));
     return null;
   }
@@ -63,12 +59,7 @@ export const getUserById = async (id_str: string) => {
 /**
  * ユーザーのレコードを更新する。設定されたTTLを付与する
  */
-export const putUser = async (
-  id_str: string,
-  screenName: string,
-  name: string,
-  sinceId: string
-) => {
+export const putUser = async (id_str: string, screenName: string, name: string, sinceId: string) => {
   const now = moment().utcOffset(env.tweetOption.utfOffset);
   const ttl = +now.format("X") + env.dynamoDb.ttlInDays * 24 * 3600;
   const record: Types.UserOnDb = {
@@ -79,7 +70,5 @@ export const putUser = async (
     updatedAt: now.format(),
     TTL: ttl
   };
-  return dynamoClient
-    .put({ TableName: env.dynamoDb.tableName, Item: record })
-    .promise();
+  return dynamoClient.put({ TableName: env.dynamoDb.tableName, Item: record }).promise();
 };

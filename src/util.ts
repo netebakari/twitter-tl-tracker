@@ -8,9 +8,7 @@ import * as Types from "./types";
  * 現在時刻を "2018-08-11T12:34:45+0900" 形式で取得する（環境変数のutfOffsetを反映する）
  */
 export const getCurrentTime = () => {
-  return moment()
-    .utcOffset(env.tweetOption.utfOffset)
-    .format();
+  return moment().utcOffset(env.tweetOption.utfOffset).format();
 };
 
 /**
@@ -31,11 +29,7 @@ export const getStatusId = (daysCount: number) => {
  * @param tweets
  */
 export const getMinimumId = (tweets: Types.Tweet[]) => {
-  return tweets
-    .map(x => x.id_str)
-    .reduce((prev, current) =>
-      compareNumber(prev, current) < 0 ? prev : current
-    );
+  return tweets.map((x) => x.id_str).reduce((prev, current) => (compareNumber(prev, current) < 0 ? prev : current));
 };
 
 /**
@@ -43,11 +37,7 @@ export const getMinimumId = (tweets: Types.Tweet[]) => {
  * @param tweets
  */
 export const getMaxId = (tweets: Types.Tweet[]) => {
-  return tweets
-    .map(x => x.id_str)
-    .reduce((prev, current) =>
-      compareNumber(prev, current) > 0 ? prev : current
-    );
+  return tweets.map((x) => x.id_str).reduce((prev, current) => (compareNumber(prev, current) > 0 ? prev : current));
 };
 
 /**
@@ -81,4 +71,15 @@ export const groupByDate = (tweets: Types.TweetEx[]) => {
     result.push({ date: date, tweets: grouped[date] });
   }
   return result;
+};
+
+export const dateToMoment = (date?: Date): moment.Moment | undefined => {
+  if (!date) {
+    return undefined;
+  }
+  try {
+    return moment(date);
+  } catch (e) {
+    return undefined;
+  }
 };

@@ -1,8 +1,8 @@
 import * as twit from "twit";
 
-type RequireOne<T, K extends keyof T = keyof T> = K extends keyof T
-  ? PartialRequire<T, K>
-  : never;
+import * as TwitTypes from "./twit";
+
+type RequireOne<T, K extends keyof T = keyof T> = K extends keyof T ? PartialRequire<T, K> : never;
 type PartialRequire<O, K extends keyof O> = {
   [P in K]-?: O[P];
 } &
@@ -65,9 +65,7 @@ export interface TweetFetchResult {
   tweets: twit.Twitter.Status[];
 }
 
-export const isFriendsAndFollowersIdsType = (
-  arg: any
-): arg is FriendsAndFollowersIdsType => {
+export const isFriendsAndFollowersIdsType = (arg: any): arg is FriendsAndFollowersIdsType => {
   if (!arg) {
     return false;
   }
@@ -108,6 +106,31 @@ export interface FriendsFollowersIdResult {
 export type TimeLineType = "HomeTL" | "UserTL" | "Favorites";
 
 export type Tweet = twit.Twitter.Status;
+
+export const isTweetExArray = (arg: any): arg is TweetEx[] => {
+  if (!Array.isArray(arg)) {
+    return false;
+  }
+  return arg.every((x) => isTweetEx(x));
+};
+
+export const isTweetEx = (arg: any): arg is TweetEx => {
+  const _arg = arg;
+  if (!TwitTypes.isTweet(_arg)) {
+    return false;
+  }
+  if (typeof arg.timestampLocal !== "string") {
+    return false;
+  }
+  if (typeof arg.dateLocal !== "string") {
+    return false;
+  }
+  if (typeof arg.serverTimestamp !== "string") {
+    return false;
+  }
+  return true;
+};
+
 export interface TweetEx extends Tweet {
   timestampLocal: string;
   /**
