@@ -2,7 +2,8 @@ import * as AWS from "aws-sdk";
 import moment from "moment";
 
 import * as env from "./env";
-import * as Types from "./types";
+import * as ParamTypes from "./types/parameters";
+
 const dynamoClient = new AWS.DynamoDB.DocumentClient({
   region: env.dynamoDb.region,
   convertEmptyValues: true,
@@ -20,7 +21,7 @@ export const getTimelineRecord = async () => {
  */
 export const updateTImelineRecord = async (sinceId: string) => {
   const now = moment().utcOffset(env.tweetOption.utfOffset);
-  const record: Types.UserOnDb = {
+  const record: ParamTypes.UserOnDb = {
     id_str: "TIMELINE",
     name: "*My Timeline*",
     screenName: "*My Timeline*",
@@ -48,7 +49,7 @@ export const getUserById = async (id_str: string) => {
 
   const found = data.Items[0];
   try {
-    Types.assertsUserOnDb(found);
+    ParamTypes.assertsUserOnDb(found);
     return found;
   } catch (e) {
     console.error(`DynamoDB record found but type guard function fails: ${e}`);
@@ -63,7 +64,7 @@ export const getUserById = async (id_str: string) => {
 export const putUser = async (id_str: string, screenName: string, name: string, sinceId: string) => {
   const now = moment().utcOffset(env.tweetOption.utfOffset);
   const ttl = +now.format("X") + env.dynamoDb.ttlInDays * 24 * 3600;
-  const record: Types.UserOnDb = {
+  const record: ParamTypes.UserOnDb = {
     id_str: id_str,
     screenName: screenName,
     name: name,

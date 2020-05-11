@@ -90,8 +90,8 @@ export interface Entities {
 export interface User {
   contributors_enabled: boolean;
   created_at: string;
-  default_profile: string;
-  default_profile_image: string;
+  default_profile: boolean; // fixed
+  default_profile_image: boolean; // fixed
   description: string;
   entities: Entities;
   favourites_count: number;

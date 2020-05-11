@@ -6,6 +6,7 @@ import Twitter from "twitter-lite";
 import * as env from "./env";
 import * as token from "./twitterToken";
 import * as Types from "./types";
+import * as ParamTypes from "./types/parameters";
 import * as TwitterTypes from "./types/twitter";
 import * as util from "./util";
 
@@ -48,7 +49,7 @@ export const lookupUsers = async (userIds: string[]): Promise<{ apiCallCount: nu
  * @param friendsOrFollowers trueならフォロイー（フォローしている人）を、falseならフォロワーを取得する
  */
 export const getFriendsOrFollowersIds = async (
-  user: Types.UserParamType,
+  user: ParamTypes.UserParamType,
   friendsOrFollowers: boolean,
   maxApiCallCount = 100
 ): Promise<string[]> => {
@@ -64,7 +65,7 @@ export const getFriendsOrFollowersIds = async (
 };
 
 const _getFriendsOrFollowersId = async (
-  user: Types.UserParamType,
+  user: ParamTypes.UserParamType,
   friendsOrFollowers: boolean,
   cursor: string | null = null
 ): Promise<{ ids: string[]; nextCursor?: string }> => {
@@ -92,7 +93,7 @@ const _getFriendsOrFollowersId = async (
  * @param user ユーザー
  */
 export const getFavorites = async (
-  user: Types.UserParamType
+  user: ParamTypes.UserParamType
 ): Promise<{ apiCallCount: number; tweets: Types.Tweet[] }> => {
   const firstChunk = await getTweets("Favorites", user, { sinceId: "100" });
   if (firstChunk.length < 180) {
@@ -127,7 +128,7 @@ export const getFavorites = async (
  * @param sinceId これ以降
  */
 export const getRecentTweets = async (
-  user: Types.UserParamType | null,
+  user: ParamTypes.UserParamType | null,
   sinceId: string
 ): Promise<{ apiCallCount: number; tweets: Types.TweetEx[] }> => {
   const timelieType: Types.TimeLineType = user === null ? "HomeTL" : "UserTL";
@@ -170,7 +171,7 @@ export const getRecentTweets = async (
  */
 export const getTweets = async (
   timelineType: Types.TimeLineType,
-  user: Types.UserParamType | null,
+  user: ParamTypes.UserParamType | null,
   condition: { sinceId?: string; maxId?: string }
 ): Promise<Types.TweetEx[]> => {
   const params: Types.Params = {

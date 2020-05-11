@@ -3,6 +3,7 @@ import * as fs from "fs";
 
 import * as s3 from "../src/s3";
 import * as Types from "../src/types";
+import * as ParamTypes from "../src/types/parameters";
 import * as util from "../src/util";
 import moment = require("moment");
 import * as Twitter from "../src/twitterClient";
@@ -92,7 +93,7 @@ describe("type guards", () => {
       };
 
       try {
-        Types.assertsUserOnDb(record);
+        ParamTypes.assertsUserOnDb(record);
       } catch (e) {
         assert.fail("type guards error");
       }
@@ -108,7 +109,7 @@ describe("type guards", () => {
       };
 
       try {
-        Types.assertsUserOnDb(record);
+        ParamTypes.assertsUserOnDb(record);
       } catch (e) {
         assert.fail("type guards error");
       }
@@ -210,12 +211,17 @@ describe("Twitter API test (call APIs actually)", () => {
     });
   });
 
-  describe("get followers", () => {
-    it("@twitter", async () => {
+  describe("get friends / followers", () => {
+    it("@twitter followers", async () => {
       const userIds = await Twitter.getFriendsOrFollowersIds({ screenName: "twitter" }, false, 1);
       assert.equal(Array.isArray(userIds), true);
+      assert.equal(userIds.length, 5000);
+    });
+
+    it("@twitter friends", async () => {
+      const userIds = await Twitter.getFriendsOrFollowersIds({ screenName: "twitter" }, true, 1);
+      assert.equal(Array.isArray(userIds), true);
       assert.equal(userIds.length > 0, true);
-      console.log(userIds);
     });
   });
 });
