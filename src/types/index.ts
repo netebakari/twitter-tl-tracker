@@ -1,6 +1,7 @@
 import { AssertionError } from "assert";
 
 import * as Twitter from "./twitter";
+import * as util from "./util";
 
 export type Params = Twitter.Params;
 
@@ -10,46 +11,19 @@ type PartialRequire<O, K extends keyof O> = {
 } &
   O;
 
-export interface ConfigRecordType {
-  Provider: string;
-  lastId: string;
-  screenNames: string[];
-  keywords: string[];
-}
+/**
+ * 特定のユーザーを指定する値。screenNameかidのどちらかで指定する
+ */
+export type UserParamType = { screenName: string } | { userId: string };
 
 /**
- * 特定のユーザーを指定する値。screenNameかidのどちらかが必須。両方が指定された場合はIDが優先される
+ * 複数のユーザーを指定する値。screenNameかidのどちらかで指定する
  */
-export type UserType = RequireOne<{
-  screenName?: string;
-  userId?: string;
-}>;
+export type UsersParamType = { screenNames: string[] } | { userIds: string[] };
 
-export const isUserOnDb = (arg: any): arg is UserOnDb => {
-  if (!arg) {
-    return false;
-  }
-  if (typeof arg !== "object") {
-    return false;
-  }
-  if (typeof arg.id_str !== "string") {
-    return false;
-  }
-  if (typeof arg.screenName !== "string") {
-    return false;
-  }
-  if (typeof arg.sinceId !== "string") {
-    return false;
-  }
-  if (typeof arg.updatedAt !== "string") {
-    return false;
-  }
-  if (arg.TTL !== undefined && typeof arg.TTL !== "number") {
-    return false;
-  }
-  return true;
-};
-
+/**
+ * DBのレコード
+ */
 export type UserOnDb = {
   id_str: string;
   screenName: string;
@@ -59,6 +33,15 @@ export type UserOnDb = {
   TTL?: number;
 };
 
+export function assertsUserOnDb(arg: any): asserts arg is UserOnDb {
+  util.mustBeObject(arg);
+  util.mustBeString(arg, "id_str");
+  util.mustBeString(arg, "screenName");
+  util.mustBeString(arg, "sinceId");
+  util.mustBeString(arg, "updatedAt");
+  util.mustBeNumber(arg, "ttl", true);
+}
+
 /**
  * ツイート取得の戻り値
  */
@@ -67,34 +50,33 @@ export interface TweetFetchResult {
   tweets: Twitter.Status[];
 }
 
-export const isFriendsAndFollowersIdsType = (arg: any): arg is FriendsAndFollowersIdsType => {
-  if (!arg) {
-    return false;
-  }
-  if (typeof arg !== "object") {
-    return false;
-  }
-  if (!Array.isArray(arg.friendsIds)) {
-    return false;
-  }
-  if (!arg.friendsIds.every((x: any) => typeof x == "string")) {
-    return false;
-  }
-  if (!Array.isArray(arg.followersIds)) {
-    return false;
-  }
-  if (!arg.followersIds.every((x: any) => typeof x == "string")) {
-    return false;
-  }
-  return true;
-};
-
 /**
  * フォロイー・フォロワーのIDリスト
  */
 export interface FriendsAndFollowersIdsType {
   friendsIds: string[];
   followersIds: string[];
+}
+
+export function assertFriendsAndFollowersIdsType(arg: any): asserts arg is FriendsAndFollowersIdsType {
+  util.mustBeObject(arg);
+  util.mustBeArray(arg, "friendsIds");
+  if (!arg.friendsIds.every((x: any) => typeof x == "string")) {
+    throw new AssertionError({ message: "arg.friendsIds contains non-string value" });
+  }
+  util.mustBeArray(arg, "followersIds");
+  if (!arg.followersIds.every((x: any) => typeof x == "string")) {
+    throw new AssertionError({ message: "arg.followersIds contains non-string value" });
+  }
+}
+
+export function isFriendsAndFollowersIdsType(arg: any): arg is FriendsAndFollowersIdsType {
+  try {
+    assertFriendsAndFollowersIdsType(arg);
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 export interface FriendsFollowersIdResult {
@@ -141,7 +123,19 @@ export interface TweetEx extends Tweet {
   dateLocal: string;
   serverTimestamp: string;
 }
+
 export type User = Twitter.User;
+
+export function assertUser(arg: any): asserts arg is User {
+  util.mustBeObject(arg);
+  util.mustBeString(arg, "created_at");
+  util.mustBeString(arg, "default_profile");
+  util.mustBeString(arg, "default_profile_image");
+  util.mustBeString(arg, "description");
+  util.mustBeString(arg, "favourites_count");
+  util.mustBeNumber(arg, "id");
+  util.mustBeString(arg, "id_str");
+}
 
 /**
  * 手抜き
@@ -202,19 +196,6 @@ export const isUsers = (arg: any): arg is Twitter.User[] => {
   return arg.every((x) => isUser(x));
 };
 
-export const isFriendsOrFollowersIdResultType = (arg: any): arg is FriendsOrFollowersIdResultType => {
-  if (!arg) {
-    return false;
-  }
-  if (typeof arg !== "object") {
-    return false;
-  }
-  if (!Array.isArray(arg.ids)) {
-    return false;
-  }
-  return true;
-};
-
 export type FriendsOrFollowersIdResultType = {
   ids: string[];
   next_cursor: number;
@@ -223,3 +204,27 @@ export type FriendsOrFollowersIdResultType = {
   previous_cursor_str: string;
   total_count: null | number;
 };
+
+export function assertsFriendsOrFollowersIdResultType(arg: any): asserts arg is FriendsOrFollowersIdResultType {
+  util.mustBeObject(arg);
+  util.mustBeArray(arg, "ids");
+  if (arg.ids.some((x: any) => typeof x !== "string")) {
+    throw new AssertionError({ message: "arg.ids contains non-string value", actual: arg.ids });
+  }
+  util.mustBeNumber(arg, "next_cursor");
+  util.mustBeString(arg, "next_cursor_str");
+  util.mustBeNumber(arg, "previous_cursor");
+  util.mustBeString(arg, "previous_cursor_str");
+  if (arg.total_count !== null && typeof arg.total_count !== "number") {
+    throw new AssertionError({ message: "arg.total_count is neighter null nor a number", actual: arg.total_count });
+  }
+}
+
+export function isFriendsOrFollowersIdResultType(arg: any): arg is FriendsOrFollowersIdResultType {
+  try {
+    assertsFriendsOrFollowersIdResultType(arg);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}

@@ -1,37 +1,45 @@
 import { AssertionError } from "assert";
 
-export function assertsObject(arg: any) {
-  if (arg === null) {
-    throw new AssertionError({ message: "arg is null" });
+export const mustBeString = (arg: any, propertyName: string, undefinedAllowed = false) => {
+  const value = arg[propertyName];
+  if (undefinedAllowed) {
+    if (value !== undefined && typeof value !== "string") {
+      throw new AssertionError({ message: `arg.${propertyName} is neigther undefined not a string`, actual: value });
+    }
+  } else {
+    if (typeof value !== "string") {
+      throw new AssertionError({ message: `arg.${propertyName} is not a string`, actual: value });
+    }
   }
+};
+
+export const mustBeNumber = (arg: any, propertyName: string, undefinedAllowed = false) => {
+  const value = arg[propertyName];
+  if (undefinedAllowed) {
+    if (value !== undefined && typeof value !== "number") {
+      throw new AssertionError({ message: `arg.${propertyName} is neigther undefined not a number`, actual: value });
+    }
+  } else {
+    if (typeof value !== "number") {
+      throw new AssertionError({ message: `arg.${propertyName} is not a number`, actual: value });
+    }
+  }
+};
+
+export const mustBeObject = (arg: any) => {
   if (arg === undefined) {
     throw new AssertionError({ message: "arg is undefined" });
   }
-  if (typeof arg === "object") {
-    throw new AssertionError({ message: "arg is not an object" });
+  if (arg === null) {
+    throw new AssertionError({ message: "arg is null" });
   }
-}
-
-export function assertsString(arg: any, undefinedAllowed = false): asserts arg is string | undefined {
-  if (undefinedAllowed) {
-    if (arg !== undefined && typeof arg !== "string") {
-      throw new AssertionError({ message: `arg is neigther undefined not a string`, actual: arg });
-    }
-  } else {
-    if (typeof arg !== "string") {
-      throw new AssertionError({ message: `arg is not a string`, actual: arg });
-    }
+  if (typeof arg !== "object") {
+    throw new AssertionError({ message: "arg is not object" });
   }
-}
+};
 
-export const assertsNumber = (arg: any, undefinedAllowed = false) => {
-  if (undefinedAllowed) {
-    if (arg !== undefined && typeof arg !== "number") {
-      throw new AssertionError({ message: `arg is neigther undefined not a number`, actual: arg });
-    }
-  } else {
-    if (typeof arg !== "number") {
-      throw new AssertionError({ message: `arg is not a number`, actual: arg });
-    }
+export const mustBeArray = (arg: any, propertyName: string) => {
+  if (!Array.isArray(arg[propertyName])) {
+    throw new AssertionError({ message: `arg.${propertyName} is not an array`, actual: arg[propertyName] });
   }
 };

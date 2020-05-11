@@ -5,7 +5,7 @@ import * as env from "./env";
 import * as Types from "./types";
 const dynamoClient = new AWS.DynamoDB.DocumentClient({
   region: env.dynamoDb.region,
-  convertEmptyValues: true
+  convertEmptyValues: true,
 });
 
 /**
@@ -25,7 +25,7 @@ export const updateTImelineRecord = async (sinceId: string) => {
     name: "*My Timeline*",
     screenName: "*My Timeline*",
     sinceId: sinceId,
-    updatedAt: now.format()
+    updatedAt: now.format(),
   };
   return dynamoClient.put({ TableName: env.dynamoDb.tableName, Item: record }).promise();
 };
@@ -38,7 +38,7 @@ export const getUserById = async (id_str: string) => {
     .query({
       TableName: env.dynamoDb.tableName,
       KeyConditionExpression: "id_str = :val",
-      ExpressionAttributeValues: { ":val": id_str }
+      ExpressionAttributeValues: { ":val": id_str },
     })
     .promise();
 
@@ -47,10 +47,11 @@ export const getUserById = async (id_str: string) => {
   }
 
   const found = data.Items[0];
-  if (Types.isUserOnDb(found)) {
+  try {
+    Types.assertsUserOnDb(found);
     return found;
-  } else {
-    console.error("DynamoDB record found but type guard function returns false");
+  } catch (e) {
+    console.error(`DynamoDB record found but type guard function fails: ${e}`);
     console.error(JSON.stringify(found));
     return null;
   }
@@ -68,7 +69,7 @@ export const putUser = async (id_str: string, screenName: string, name: string, 
     name: name,
     sinceId: sinceId,
     updatedAt: now.format(),
-    TTL: ttl
+    TTL: ttl,
   };
   return dynamoClient.put({ TableName: env.dynamoDb.tableName, Item: record }).promise();
 };

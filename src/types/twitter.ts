@@ -18,9 +18,6 @@
 // <reference types="geojson" />
 */
 
-import { EventEmitter } from "events";
-import { IncomingMessage } from "http";
-
 export type StreamEndpoint = "statuses/filter" | "statuses/sample" | "statuses/firehose" | "user" | "site";
 
 export type ResultType = "mixed" | "popular" | "recent";

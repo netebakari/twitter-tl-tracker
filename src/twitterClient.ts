@@ -2,21 +2,14 @@
 import * as _ from "lodash";
 import moment from "moment";
 import Twitter from "twitter-lite";
-import * as TwitterTypes from "./types/twitter";
+
 import * as env from "./env";
 import * as token from "./twitterToken";
 import * as Types from "./types";
+import * as TwitterTypes from "./types/twitter";
 import * as util from "./util";
 
 const client = new Twitter(token.twitterToken);
-
-export type UsersParamType =
-  | {
-      userIds: string[];
-    }
-  | {
-      screenNames: string[];
-    };
 
 /**
  * users/lookup を叩いてユーザー情報を取得する
@@ -55,7 +48,7 @@ export const lookupUsers = async (userIds: string[]): Promise<{ apiCallCount: nu
  * @param friendsOrFollowers trueならフォロイー（フォローしている人）を、falseならフォロワーを取得する
  */
 export const getFriendsOrFollowersIds = async (
-  user: Types.UserType,
+  user: Types.UserParamType,
   friendsOrFollowers: boolean,
   maxApiCallCount = 100
 ): Promise<string[]> => {
@@ -71,15 +64,15 @@ export const getFriendsOrFollowersIds = async (
 };
 
 const _getFriendsOrFollowersId = async (
-  user: Types.UserType,
+  user: Types.UserParamType,
   friendsOrFollowers: boolean,
   cursor: string | null = null
 ): Promise<{ ids: string[]; nextCursor?: string }> => {
-  const params: TwitterTypes.Params = { stringify_ids: true };
+  const params: TwitterTypes.Params = { stringify_ids: true, count: 5000 };
   if (cursor) {
     params.cursor = cursor;
   }
-  if (user.userId) {
+  if ("userId" in user) {
     params.user_id = user.userId;
   } else {
     params.screen_name = user.screenName;
@@ -87,22 +80,20 @@ const _getFriendsOrFollowersId = async (
 
   const endpoint = friendsOrFollowers ? "friends/ids" : "followers/ids";
   const result = await client.get(endpoint, params);
-  if (Types.isFriendsOrFollowersIdResultType(result.data)) {
-    if (result.data.next_cursor === 0) {
-      return { ids: result.data.ids };
-    }
-    return { ids: result.data.ids, nextCursor: result.data.next_cursor_str };
-  } else {
-    console.error(result);
-    throw new Error("取得した値の形が変です");
+  Types.assertsFriendsOrFollowersIdResultType(result);
+  if (result.next_cursor === 0) {
+    return { ids: result.ids };
   }
+  return { ids: result.ids, nextCursor: result.next_cursor_str };
 };
 
 /**
  * 対象のユーザーのlikeを最大3200件取得する。
  * @param user ユーザー
  */
-export const getFavorites = async (user: Types.UserType): Promise<{ apiCallCount: number; tweets: Types.Tweet[] }> => {
+export const getFavorites = async (
+  user: Types.UserParamType
+): Promise<{ apiCallCount: number; tweets: Types.Tweet[] }> => {
   const firstChunk = await getTweets("Favorites", user, { sinceId: "100" });
   if (firstChunk.length < 180) {
     return { apiCallCount: 1, tweets: firstChunk };
@@ -136,7 +127,7 @@ export const getFavorites = async (user: Types.UserType): Promise<{ apiCallCount
  * @param sinceId これ以降
  */
 export const getRecentTweets = async (
-  user: Types.UserType | null,
+  user: Types.UserParamType | null,
   sinceId: string
 ): Promise<{ apiCallCount: number; tweets: Types.TweetEx[] }> => {
   const timelieType: Types.TimeLineType = user === null ? "HomeTL" : "UserTL";
@@ -179,7 +170,7 @@ export const getRecentTweets = async (
  */
 export const getTweets = async (
   timelineType: Types.TimeLineType,
-  user: Types.UserType | null,
+  user: Types.UserParamType | null,
   condition: { sinceId?: string; maxId?: string }
 ): Promise<Types.TweetEx[]> => {
   const params: Types.Params = {
@@ -199,7 +190,7 @@ export const getTweets = async (
     if (user === null) {
       throw new Error("UserTL and Favorits need user info");
     }
-    if (user.userId) {
+    if ("userId" in user) {
       params.user_id = user.userId;
     } else {
       params.screen_name = user.screenName;

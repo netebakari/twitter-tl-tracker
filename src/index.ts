@@ -38,8 +38,9 @@ exports.archive = async (event: any, context: LambdaType.Context) => {
  */
 exports.event = async (event: any, context: LambdaType.Context) => {
   // 現在のf/fを取得（IDのみ）
-  const friendsIds = await twitter.getFriendsOrFollowersIds({ userId: env.tweetOption.myUserIdStr }, true);
-  const followersIds = await twitter.getFriendsOrFollowersIds({ userId: env.tweetOption.myUserIdStr }, false);
+  const user: Types.UserParamType = { userId: env.tweetOption.myUserIdStr };
+  const friendsIds = await twitter.getFriendsOrFollowersIds(user, true);
+  const followersIds = await twitter.getFriendsOrFollowersIds(user, false);
 
   // S3に保存しておいた最後のf/fを取得（IDのみ）
   const latest = (await s3.getLatestFriendFollowerIds()) || {

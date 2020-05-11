@@ -91,7 +91,11 @@ describe("type guards", () => {
         updatedAt: "2020-01-19T20:00:00+09:00",
       };
 
-      assert.equal(Types.isUserOnDb(record), true);
+      try {
+        Types.assertsUserOnDb(record);
+      } catch (e) {
+        assert.fail("type guards error");
+      }
     });
 
     it("test1 (no ttl)", () => {
@@ -103,7 +107,11 @@ describe("type guards", () => {
         updatedAt: "2020-01-19T20:00:00+09:00",
       };
 
-      assert.equal(Types.isUserOnDb(record), true);
+      try {
+        Types.assertsUserOnDb(record);
+      } catch (e) {
+        assert.fail("type guards error");
+      }
     });
   });
 
@@ -113,7 +121,8 @@ describe("type guards", () => {
         followersIds: ["1", "2"],
         friendsIds: ["3", "4"],
       };
-      assert.equal(Types.isFriendsAndFollowersIdsType(data), true);
+      Types.assertFriendsAndFollowersIdsType(data);
+      assert.ok("OK");
     });
 
     it("empty list", () => {
@@ -121,7 +130,8 @@ describe("type guards", () => {
         followersIds: [],
         friendsIds: [],
       };
-      assert.equal(Types.isFriendsAndFollowersIdsType(data), true);
+      Types.assertFriendsAndFollowersIdsType(data);
+      assert.ok("OK");
     });
 
     it("must have entity", () => {
@@ -131,13 +141,22 @@ describe("type guards", () => {
       const data2 = {
         friendsIds: ["1", "2"],
       };
-      assert.equal(Types.isFriendsAndFollowersIdsType(data1), false);
-      assert.equal(Types.isFriendsAndFollowersIdsType(data2), false);
+      try {
+        Types.assertFriendsAndFollowersIdsType(data1);
+        assert.fail("must fail!");
+      } catch (e) {}
+      try {
+        Types.assertFriendsAndFollowersIdsType(data2);
+        assert.fail("must fail!");
+      } catch (e) {}
     });
 
     it("empty object", () => {
       const data = {};
-      assert.equal(Types.isFriendsAndFollowersIdsType(data), false);
+      try {
+        Types.assertFriendsAndFollowersIdsType(data);
+        assert.fail("must fail!");
+      } catch (e) {}
     });
 
     it("includes other than string", () => {
@@ -145,7 +164,10 @@ describe("type guards", () => {
         followersIds: ["1", 2],
         friendsIds: [],
       };
-      assert.equal(Types.isFriendsAndFollowersIdsType(data), false);
+      try {
+        Types.assertFriendsAndFollowersIdsType(data);
+        assert.fail("must fail!");
+      } catch (e) {}
     });
   });
 
@@ -181,8 +203,19 @@ describe("util", () => {
 describe("Twitter API test (call APIs actually)", () => {
   describe("lookupUsers", () => {
     it("@twitter", async () => {
-      const result = await Twitter.lookupUsers(["783214"]);
-      assert.ok("OK");
+      const user = await Twitter.lookupUsers(["783214"]);
+      assert.equal(user.users.length, 1);
+      assert.equal(Types.isUser(user.users[0]), true);
+      assert.equal(user.users[0].id_str, "783214");
+    });
+  });
+
+  describe("get followers", () => {
+    it("@twitter", async () => {
+      const userIds = await Twitter.getFriendsOrFollowersIds({ screenName: "twitter" }, false, 1);
+      assert.equal(Array.isArray(userIds), true);
+      assert.equal(userIds.length > 0, true);
+      console.log(userIds);
     });
   });
 });
