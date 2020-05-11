@@ -5,7 +5,6 @@ import moment from "moment";
 
 import * as env from "./env";
 import * as Types from "./types";
-import * as TweetTypes from "./types/twit";
 import * as util from "./util";
 
 const s3 = new AWS.S3({ region: env.s3.region });

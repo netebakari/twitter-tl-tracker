@@ -3,7 +3,6 @@ import * as fs from "fs";
 
 import * as s3 from "../src/s3";
 import * as Types from "../src/types";
-import * as TwitTypes from "../src/types/twit";
 import * as util from "../src/util";
 import moment = require("moment");
 import * as Twitter from "../src/twitterClient";
@@ -154,13 +153,13 @@ describe("type guards", () => {
     it("test1", () => {
       const buffer = fs.readFileSync("test/fixtures/tweet1.json");
       const data = JSON.parse(buffer.toString("utf8"));
-      assert.equal(TwitTypes.isTweet(data), true);
+      assert.equal(Types.isTweet(data), true);
     });
 
     it("test2", () => {
       const buffer = fs.readFileSync("test/fixtures/tweet2.json");
       const data = JSON.parse(buffer.toString("utf8"));
-      assert.equal(TwitTypes.isTweet(data), true);
+      assert.equal(Types.isTweet(data), true);
     });
   });
 });

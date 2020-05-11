@@ -1,25 +1,31 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import * as _ from "lodash";
 import moment from "moment";
-import * as twit from "twit";
 import Twitter from "twitter-lite";
-
+import * as TwitterTypes from "./types/twitter";
 import * as env from "./env";
 import * as token from "./twitterToken";
 import * as Types from "./types";
-import * as TwitTypes from "./types/twit";
 import * as util from "./util";
 
 const client = new Twitter(token.twitterToken);
+
+export type UsersParamType =
+  | {
+      userIds: string[];
+    }
+  | {
+      screenNames: string[];
+    };
 
 /**
  * users/lookup を叩いてユーザー情報を取得する
  * @param userIds ユーザーIDの配列。100件ごとにまとめてAPIがコールされる
  */
 export const lookupUsers = async (userIds: string[]): Promise<{ apiCallCount: number; users: Types.User[] }> => {
-  const doPost = async (params: twit.Params): Promise<Types.User[]> => {
+  const doPost = async (params: Types.Params): Promise<Types.User[]> => {
     const data = await client.post("users/lookup", params);
-    if (TwitTypes.isUsers(data)) {
+    if (Types.isUsers(data)) {
       return data;
     } else {
       console.error(data);
@@ -69,7 +75,7 @@ const _getFriendsOrFollowersId = async (
   friendsOrFollowers: boolean,
   cursor: string | null = null
 ): Promise<{ ids: string[]; nextCursor?: string }> => {
-  const params: twit.Params = { stringify_ids: true };
+  const params: TwitterTypes.Params = { stringify_ids: true };
   if (cursor) {
     params.cursor = cursor;
   }
@@ -81,7 +87,7 @@ const _getFriendsOrFollowersId = async (
 
   const endpoint = friendsOrFollowers ? "friends/ids" : "followers/ids";
   const result = await client.get(endpoint, params);
-  if (TwitTypes.isFriendsOrFollowersIdResultType(result.data)) {
+  if (Types.isFriendsOrFollowersIdResultType(result.data)) {
     if (result.data.next_cursor === 0) {
       return { ids: result.data.ids };
     }
@@ -176,7 +182,7 @@ export const getTweets = async (
   user: Types.UserType | null,
   condition: { sinceId?: string; maxId?: string }
 ): Promise<Types.TweetEx[]> => {
-  const params: twit.Params = {
+  const params: Types.Params = {
     count: 200,
     include_rts: true,
     exclude_replies: false,
@@ -214,7 +220,7 @@ export const getTweets = async (
   console.log(`TwitterClient#getTweets(): endpoint=${endpoint}, parameter=${JSON.stringify(params)}`);
 
   const result = await client.get(endpoint, params);
-  if (TwitTypes.isTweets(result.data)) {
+  if (Types.isTweets(result.data)) {
     return alterTweet(result.data);
   } else {
     console.error(result.data);

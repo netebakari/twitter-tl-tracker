@@ -1,43 +1,8 @@
 import { AssertionError } from "assert";
-import * as twit from "twit";
 
-import * as TwitTypes from "./twit";
+import * as Twitter from "./twitter";
 
-export function assertsObject(arg: any) {
-  if (arg === null) {
-    throw new AssertionError({ message: "arg is null" });
-  }
-  if (arg === undefined) {
-    throw new AssertionError({ message: "arg is undefined" });
-  }
-  if (typeof arg === "object") {
-    throw new AssertionError({ message: "arg is not an object" });
-  }
-}
-
-export function assertsString(arg: any, undefinedAllowed = false): asserts arg is string | undefined {
-  if (undefinedAllowed) {
-    if (arg !== undefined && typeof arg !== "string") {
-      throw new AssertionError({ message: `arg is neigther undefined not a string`, actual: arg });
-    }
-  } else {
-    if (typeof arg !== "string") {
-      throw new AssertionError({ message: `arg is not a string`, actual: arg });
-    }
-  }
-}
-
-export const assertsNumber = (arg: any, undefinedAllowed = false) => {
-  if (undefinedAllowed) {
-    if (arg !== undefined && typeof arg !== "number") {
-      throw new AssertionError({ message: `arg is neigther undefined not a number`, actual: arg });
-    }
-  } else {
-    if (typeof arg !== "number") {
-      throw new AssertionError({ message: `arg is not a number`, actual: arg });
-    }
-  }
-};
+export type Params = Twitter.Params;
 
 type RequireOne<T, K extends keyof T = keyof T> = K extends keyof T ? PartialRequire<T, K> : never;
 type PartialRequire<O, K extends keyof O> = {
@@ -99,7 +64,7 @@ export type UserOnDb = {
  */
 export interface TweetFetchResult {
   apiCallCount: number;
-  tweets: twit.Twitter.Status[];
+  tweets: Twitter.Status[];
 }
 
 export const isFriendsAndFollowersIdsType = (arg: any): arg is FriendsAndFollowersIdsType => {
@@ -142,7 +107,7 @@ export interface FriendsFollowersIdResult {
 
 export type TimeLineType = "HomeTL" | "UserTL" | "Favorites";
 
-export type Tweet = twit.Twitter.Status;
+export type Tweet = Twitter.Status;
 
 export const isTweetExArray = (arg: any): arg is TweetEx[] => {
   if (!Array.isArray(arg)) {
@@ -153,7 +118,7 @@ export const isTweetExArray = (arg: any): arg is TweetEx[] => {
 
 export const isTweetEx = (arg: any): arg is TweetEx => {
   const _arg = arg;
-  if (!TwitTypes.isTweet(_arg)) {
+  if (!isTweet(_arg)) {
     return false;
   }
   if (typeof arg.timestampLocal !== "string") {
@@ -176,4 +141,85 @@ export interface TweetEx extends Tweet {
   dateLocal: string;
   serverTimestamp: string;
 }
-export type User = twit.Twitter.User;
+export type User = Twitter.User;
+
+/**
+ * 手抜き
+ * @param arg
+ */
+export const isTweet = (arg: any): arg is Twitter.Status => {
+  if (!arg) {
+    return false;
+  }
+  if (typeof arg !== "object") {
+    return false;
+  }
+  if (typeof arg.id !== "number") {
+    return false;
+  }
+  if (typeof arg.id_str !== "string") {
+    return false;
+  }
+
+  return true;
+};
+
+export const isTweets = (arg: any): arg is Twitter.Status[] => {
+  if (!Array.isArray(arg)) {
+    return false;
+  }
+  return arg.every((x) => isTweet(x));
+};
+
+/**
+ * 手抜き
+ * @param arg
+ */
+export const isUser = (arg: any): arg is Twitter.User => {
+  if (!arg) {
+    return false;
+  }
+  if (typeof arg !== "object") {
+    return false;
+  }
+  if (typeof arg.id !== "number") {
+    return false;
+  }
+  if (typeof arg.id_str !== "string") {
+    return false;
+  }
+  if (typeof arg.name !== "string") {
+    return false;
+  }
+
+  return true;
+};
+
+export const isUsers = (arg: any): arg is Twitter.User[] => {
+  if (!Array.isArray(arg)) {
+    return false;
+  }
+  return arg.every((x) => isUser(x));
+};
+
+export const isFriendsOrFollowersIdResultType = (arg: any): arg is FriendsOrFollowersIdResultType => {
+  if (!arg) {
+    return false;
+  }
+  if (typeof arg !== "object") {
+    return false;
+  }
+  if (!Array.isArray(arg.ids)) {
+    return false;
+  }
+  return true;
+};
+
+export type FriendsOrFollowersIdResultType = {
+  ids: string[];
+  next_cursor: number;
+  next_cursor_str: string;
+  previous_cursor: number;
+  previous_cursor_str: string;
+  total_count: null | number;
+};
