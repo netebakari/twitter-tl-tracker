@@ -10,6 +10,7 @@ import * as s3 from "./s3";
 import * as sqs from "./sqs";
 import * as twitter from "./twitterClient";
 import * as Types from "./types";
+import * as ParamTypes from "./types/parameters";
 import * as util from "./util";
 
 /**
@@ -38,8 +39,9 @@ exports.archive = async (event: any, context: LambdaType.Context) => {
  */
 exports.event = async (event: any, context: LambdaType.Context) => {
   // 現在のf/fを取得（IDのみ）
-  const friendsIds = await twitter.getFriendsOrFollowersIds({ userId: env.tweetOption.myUserIdStr }, true);
-  const followersIds = await twitter.getFriendsOrFollowersIds({ userId: env.tweetOption.myUserIdStr }, false);
+  const user: ParamTypes.UserParamType = { userId: env.tweetOption.myUserIdStr };
+  const friendsIds = await twitter.getFriendsOrFollowersIds(user, true);
+  const followersIds = await twitter.getFriendsOrFollowersIds(user, false);
 
   // S3に保存しておいた最後のf/fを取得（IDのみ）
   const latest = (await s3.getLatestFriendFollowerIds()) || {

@@ -20,6 +20,6 @@ const twitter_access_token_secret = getEnv("twitter_access_token_secret");
 export const twitterToken = {
   consumer_key: twitter_consumer_key,
   consumer_secret: twitter_consumer_secret,
-  access_token: twitter_access_token,
+  access_token_key: twitter_access_token,
   access_token_secret: twitter_access_token_secret,
 };

@@ -1,13 +1,17 @@
 import * as assert from "assert";
 import * as fs from "fs";
-import * as mocha from "mocha";
 
-import * as myModule from "../src/index";
 import * as s3 from "../src/s3";
 import * as Types from "../src/types";
-import * as TwitTypes from "../src/types/twit";
+import * as ParamTypes from "../src/types/parameters";
 import * as util from "../src/util";
 import moment = require("moment");
+import * as Twitter from "../src/twitterClient";
+
+const loadJson = (filename: string): any => {
+  const buffer = fs.readFileSync(`test/fixtures/${filename}`);
+  return JSON.parse(buffer.toString("utf-8"));
+};
 
 describe("s3", () => {
   describe("getTextContent", () => {
@@ -93,7 +97,11 @@ describe("type guards", () => {
         updatedAt: "2020-01-19T20:00:00+09:00",
       };
 
-      assert.equal(Types.isUserOnDb(record), true);
+      try {
+        ParamTypes.assertsUserOnDb(record);
+      } catch (e) {
+        assert.fail("type guards error");
+      }
     });
 
     it("test1 (no ttl)", () => {
@@ -105,7 +113,30 @@ describe("type guards", () => {
         updatedAt: "2020-01-19T20:00:00+09:00",
       };
 
-      assert.equal(Types.isUserOnDb(record), true);
+      try {
+        ParamTypes.assertsUserOnDb(record);
+      } catch (e) {
+        assert.fail("type guards error");
+      }
+    });
+  });
+
+  describe("isUser", () => {
+    it("@twitter", () => {
+      const data = loadJson("user1.json");
+      try {
+        Types.assertUser(data);
+      } catch (e) {
+        assert.fail(e);
+      }
+    });
+    it("protected user", () => {
+      const data = loadJson("user2.json");
+      try {
+        Types.assertUser(data);
+      } catch (e) {
+        assert.fail(e);
+      }
     });
   });
 
@@ -115,7 +146,8 @@ describe("type guards", () => {
         followersIds: ["1", "2"],
         friendsIds: ["3", "4"],
       };
-      assert.equal(Types.isFriendsAndFollowersIdsType(data), true);
+      Types.assertFriendsAndFollowersIdsType(data);
+      assert.ok("OK");
     });
 
     it("empty list", () => {
@@ -123,7 +155,8 @@ describe("type guards", () => {
         followersIds: [],
         friendsIds: [],
       };
-      assert.equal(Types.isFriendsAndFollowersIdsType(data), true);
+      Types.assertFriendsAndFollowersIdsType(data);
+      assert.ok("OK");
     });
 
     it("must have entity", () => {
@@ -133,13 +166,22 @@ describe("type guards", () => {
       const data2 = {
         friendsIds: ["1", "2"],
       };
-      assert.equal(Types.isFriendsAndFollowersIdsType(data1), false);
-      assert.equal(Types.isFriendsAndFollowersIdsType(data2), false);
+      try {
+        Types.assertFriendsAndFollowersIdsType(data1);
+        assert.fail("must fail!");
+      } catch (e) {}
+      try {
+        Types.assertFriendsAndFollowersIdsType(data2);
+        assert.fail("must fail!");
+      } catch (e) {}
     });
 
     it("empty object", () => {
       const data = {};
-      assert.equal(Types.isFriendsAndFollowersIdsType(data), false);
+      try {
+        Types.assertFriendsAndFollowersIdsType(data);
+        assert.fail("must fail!");
+      } catch (e) {}
     });
 
     it("includes other than string", () => {
@@ -147,7 +189,10 @@ describe("type guards", () => {
         followersIds: ["1", 2],
         friendsIds: [],
       };
-      assert.equal(Types.isFriendsAndFollowersIdsType(data), false);
+      try {
+        Types.assertFriendsAndFollowersIdsType(data);
+        assert.fail("must fail!");
+      } catch (e) {}
     });
   });
 
@@ -155,13 +200,13 @@ describe("type guards", () => {
     it("test1", () => {
       const buffer = fs.readFileSync("test/fixtures/tweet1.json");
       const data = JSON.parse(buffer.toString("utf8"));
-      assert.equal(TwitTypes.isTweet(data), true);
+      assert.equal(Types.isTweet(data), true);
     });
 
     it("test2", () => {
       const buffer = fs.readFileSync("test/fixtures/tweet2.json");
       const data = JSON.parse(buffer.toString("utf8"));
-      assert.equal(TwitTypes.isTweet(data), true);
+      assert.equal(Types.isTweet(data), true);
     });
   });
 });
@@ -176,6 +221,31 @@ describe("util", () => {
     it("test2", () => {
       const result = util.dateToMoment(undefined);
       assert.equal(result, undefined);
+    });
+  });
+});
+
+describe("Twitter API test (call APIs actually)", () => {
+  describe("lookupUsers", () => {
+    it("@twitter", async () => {
+      const user = await Twitter.lookupUsers(["783214"]);
+      assert.equal(user.users.length, 1);
+      assert.equal(Types.isUser(user.users[0]), true);
+      assert.equal(user.users[0].id_str, "783214");
+    });
+  });
+
+  describe("get friends / followers", () => {
+    it("@twitter followers", async () => {
+      const userIds = await Twitter.getFriendsOrFollowersIds({ screenName: "twitter" }, false, 1);
+      assert.equal(Array.isArray(userIds), true);
+      assert.equal(userIds.length, 5000);
+    });
+
+    it("@twitter friends", async () => {
+      const userIds = await Twitter.getFriendsOrFollowersIds({ screenName: "twitter" }, true, 1);
+      assert.equal(Array.isArray(userIds), true);
+      assert.equal(userIds.length > 0, true);
     });
   });
 });
