@@ -1,0 +1,94 @@
+{
+  "id": 783214,
+  "id_str": "783214",
+  "name": "Twitter",
+  "screen_name": "Twitter",
+  "location": "Everywhere",
+  "description": "What’s happening?!",
+  "url": "https://t.co/TAXQpsHa5X",
+  "entities": {
+    "url": {
+      "urls": [
+        {
+          "url": "https://t.co/TAXQpsHa5X",
+          "expanded_url": "https://about.twitter.com/",
+          "display_url": "about.twitter.com",
+          "indices": [0, 23]
+        }
+      ]
+    },
+    "description": { "urls": [] }
+  },
+  "protected": false,
+  "followers_count": 57960697,
+  "friends_count": 1,
+  "listed_count": 87875,
+  "created_at": "Tue Feb 20 14:35:54 +0000 2007",
+  "favourites_count": 6396,
+  "utc_offset": null,
+  "time_zone": null,
+  "geo_enabled": true,
+  "verified": true,
+  "statuses_count": 13620,
+  "lang": null,
+  "status": {
+    "created_at": "Sun May 10 16:57:28 +0000 2020",
+    "id": 1259527991882850300,
+    "id_str": "1259527991882850304",
+    "full_text": "@franky_kilungu she's always right",
+    "truncated": false,
+    "display_text_range": [16, 34],
+    "entities": {
+      "hashtags": [],
+      "symbols": [],
+      "user_mentions": [
+        {
+          "screen_name": "franky_kilungu",
+          "name": "Kilungu™",
+          "id": 705624719437901800,
+          "id_str": "705624719437901825",
+          "indices": [0, 15]
+        }
+      ],
+      "urls": []
+    },
+    "source": "<a href=\"https://www.sprinklr.com\" rel=\"nofollow\">Sprinklr</a>",
+    "in_reply_to_status_id": 1259516979846819800,
+    "in_reply_to_status_id_str": "1259516979846819841",
+    "in_reply_to_user_id": 705624719437901800,
+    "in_reply_to_user_id_str": "705624719437901825",
+    "in_reply_to_screen_name": "franky_kilungu",
+    "geo": null,
+    "coordinates": null,
+    "place": null,
+    "contributors": null,
+    "is_quote_status": false,
+    "retweet_count": 3,
+    "favorite_count": 53,
+    "favorited": false,
+    "retweeted": false,
+    "lang": "en"
+  },
+  "contributors_enabled": false,
+  "is_translator": false,
+  "is_translation_enabled": false,
+  "profile_background_color": "ACDED6",
+  "profile_background_image_url": "http://abs.twimg.com/images/themes/theme18/bg.gif",
+  "profile_background_image_url_https": "https://abs.twimg.com/images/themes/theme18/bg.gif",
+  "profile_background_tile": true,
+  "profile_image_url": "http://pbs.twimg.com/profile_images/1111729635610382336/_65QFl7B_normal.png",
+  "profile_image_url_https": "https://pbs.twimg.com/profile_images/1111729635610382336/_65QFl7B_normal.png",
+  "profile_banner_url": "https://pbs.twimg.com/profile_banners/783214/1583158904",
+  "profile_link_color": "1B95E0",
+  "profile_sidebar_border_color": "FFFFFF",
+  "profile_sidebar_fill_color": "F6F6F6",
+  "profile_text_color": "333333",
+  "profile_use_background_image": true,
+  "has_extended_profile": true,
+  "default_profile": false,
+  "default_profile_image": false,
+  "following": false,
+  "follow_request_sent": false,
+  "notifications": false,
+  "translator_type": "regular"
+}

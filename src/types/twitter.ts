@@ -88,49 +88,68 @@ export interface Entities {
  * @see https://dev.twitter.com/overview/api/users
  */
 export interface User {
-  contributors_enabled: boolean;
-  created_at: string;
-  default_profile: boolean; // fixed
-  default_profile_image: boolean; // fixed
-  description: string;
-  entities: Entities;
-  favourites_count: number;
-  follow_request_sent?: boolean;
-  following?: boolean;
-  followers_count: number;
-  friends_count: number;
-  geo_enabled?: boolean;
   id: number;
   id_str: string;
-  is_translator?: boolean;
-  lang: string;
-  listed_count: number;
-  location: string;
   name: string;
-  notifications?: boolean;
+  screen_name: string;
+  location: string;
+  description: string;
+  url: string | null; // fixed
+  entities: UserEntities;
+  protected: boolean;
+  followers_count: number;
+  friends_count: number;
+  listed_count: number;
+  created_at: string;
+  favourites_count: number;
+  utc_offset?: number | null; // fixed
+  time_zone?: string | null; // fiexed
+  geo_enabled?: boolean;
+  verified: boolean;
+  statuses_count: number;
+  lang: string | null;
+  status?: Status;
+  contributors_enabled: boolean;
+  is_translator?: boolean;
+  is_translation_enabled?: boolean; // appended
   profile_background_color: string;
   profile_background_image_url: string;
   profile_background_image_url_https: string;
   profile_background_tile: boolean;
-  profile_banner_url: string;
   profile_image_url: string;
   profile_image_url_https: string;
+  profile_banner_url: string;
   profile_link_color: string;
   profile_sidebar_border_color: string;
   profile_sidebar_fill_color: string;
   profile_text_color: string;
   profile_use_background_image: boolean;
-  protected: boolean;
-  screen_name: string;
-  show_all_inline_media: boolean;
-  status?: Status;
-  statuses_count: number;
-  time_zone?: string;
+  has_extended_profile?: boolean; // appended
+  default_profile: boolean; // fixed
+  default_profile_image: boolean; // fixed
+  following?: boolean;
+  follow_request_sent?: boolean;
+  notifications?: boolean;
+  translator_type?: string;
+  show_all_inline_media?: boolean;
+  withheld_in_countries?: string;
+  withheld_scope?: string;
+}
+
+export interface UserEntities {
+  url: UserEntitiesDescription;
+  description: UserEntitiesDescription;
+}
+
+export interface UserEntitiesDescription {
+  urls: URL[];
+}
+
+export interface URL {
   url: string;
-  utc_offset?: number;
-  verified: boolean;
-  withheld_in_countries: string;
-  withheld_scope: string;
+  expanded_url: string;
+  display_url: string;
+  indices: number[];
 }
 
 /**

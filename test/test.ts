@@ -8,6 +8,11 @@ import * as util from "../src/util";
 import moment = require("moment");
 import * as Twitter from "../src/twitterClient";
 
+const loadJson = (filename: string): any => {
+  const buffer = fs.readFileSync(`test/fixtures/${filename}`);
+  return JSON.parse(buffer.toString("utf-8"));
+};
+
 describe("s3", () => {
   describe("getTextContent", () => {
     it("test method", async () => {
@@ -112,6 +117,25 @@ describe("type guards", () => {
         ParamTypes.assertsUserOnDb(record);
       } catch (e) {
         assert.fail("type guards error");
+      }
+    });
+  });
+
+  describe("isUser", () => {
+    it("@twitter", () => {
+      const data = loadJson("user1.json");
+      try {
+        Types.assertUser(data);
+      } catch (e) {
+        assert.fail(e);
+      }
+    });
+    it("protected user", () => {
+      const data = loadJson("user2.json");
+      try {
+        Types.assertUser(data);
+      } catch (e) {
+        assert.fail(e);
       }
     });
   });

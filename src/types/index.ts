@@ -5,8 +5,6 @@ import * as util from "./util";
 
 export type Params = Twitter.Params;
 
-
-
 /**
  * ツイート取得の戻り値
  */
@@ -108,13 +106,25 @@ export type User = Twitter.User;
 
 export function assertUser(arg: any): asserts arg is User {
   util.mustBeObject(arg);
+  util.mustBeNumber(arg, "id");
+  util.mustBeString(arg, "id_str");
+  util.mustBeString(arg, "name");
+  util.mustBeString(arg, "screen_name");
+  util.mustBeString(arg, "location");
+  util.mustBeString(arg, "description");
+  if (arg.url !== null && typeof arg.url !== "string") {
+    throw new AssertionError({
+      message: "arg.url neigther null nor string",
+      actual: arg.url,
+    });
+  }
+  util.mustBeBoolean(arg, "protected");
+
+  
   util.mustBeString(arg, "created_at");
   util.mustBeBoolean(arg, "default_profile");
   util.mustBeBoolean(arg, "default_profile_image");
-  util.mustBeString(arg, "description");
   util.mustBeNumber(arg, "favourites_count");
-  util.mustBeNumber(arg, "id");
-  util.mustBeString(arg, "id_str");
 }
 
 export function isUser(arg: any): arg is Twitter.User {

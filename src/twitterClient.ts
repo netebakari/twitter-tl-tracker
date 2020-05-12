@@ -43,6 +43,18 @@ export const lookupUsers = async (userIds: string[]): Promise<{ apiCallCount: nu
   return { apiCallCount, users: _.flatten(chunks) };
 };
 
+export const lookupUserByScreenName = async (screenName: string): Promise<Types.User> => {
+  const params = {
+    screen_name: screenName,
+    include_entities: true,
+    tweet_mode: "extended",
+  };
+  const data = await client.post("users/lookup", params);
+  console.log(JSON.stringify(data));
+  Types.assertUser(data);
+  return data;
+};
+
 /**
  * あるユーザーのフォロワーまたはフォロイーのIDを取得する
  * @param user ユーザー
