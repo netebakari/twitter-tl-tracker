@@ -278,7 +278,7 @@ Resources:
           options_utfOffset: !Sub ${UtfOffsetInHours}
           options_myUserIdStr: !Sub ${TwitterUserId}
       Handler: "index.archive"
-      MemorySize: 320
+      MemorySize: 1024
       Role: !GetAtt IAMRoleForLambda.Arn
       Runtime: nodejs12.x
       Timeout: 300
