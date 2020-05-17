@@ -57,7 +57,7 @@ Parameters:
   S3BucketName:
     Default: "your-bucket-name-for-tweet-log"
     AllowedPattern: '^[a-z0-9\-\.]+$'
-    Description: S3 Bucket Name
+    Description: S3 Bucket Name (MUST already exits)
     Type: String
   DynamoDbTableName:
     Default: TwitterTLTracker-Timelines
@@ -79,16 +79,8 @@ Resources:
       VisibilityTimeout: 300
       QueueName: !Sub '${QueueName}'
 
-  S3Bucket:
-    Type: 'AWS::S3::Bucket'
-    DeletionPolicy: Retain
-    Properties:
-      BucketName: !Sub ${S3BucketName}
-
   TimelineDynamoDB:
     Type: 'AWS::DynamoDB::Table'
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
       TableName: !Sub '${DynamoDbTableName}'
       AttributeDefinitions:
@@ -137,10 +129,14 @@ Resources:
   IamPolicyLambda2:
     Type: 'AWS::IAM::Policy'
     Properties:
-      PolicyName: SQS
+      PolicyName: SQS-DynamoDB-S3-Lambda
       PolicyDocument:
         Version: 2012-10-17
         Statement:
+          - Effect: Allow
+            Action:
+              - 'lambda:InvokeFunction'
+            Resource: !GetAtt LambdaTLMerger.Arn
           - Effect: Allow
             Action:
               - 'sqs:DeleteMessage'
@@ -148,16 +144,6 @@ Resources:
               - 'sqs:SendMessage'
               - 'sqs:GetQueueAttributes'
             Resource: !GetAtt UserIdQueue.Arn
-      Roles:
-        - !Ref IAMRoleForLambda
-
-  IamPolicyLambda3:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: DynamoDB
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
           - Effect: Allow
             Action:
               - "dynamodb:PutItem"
@@ -165,20 +151,11 @@ Resources:
               - "dynamodb:Query"
               - "dynamodb:UpdateItem"
             Resource: !GetAtt TimelineDynamoDB.Arn
-      Roles:
-        - !Ref IAMRoleForLambda
-
-  IamPolicyLambda4:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: S3
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
           - Effect: Allow
             Action:
               - "s3:PutObject"
               - "s3:ListBucket"
+              - "s3:GetObject"
             Resource:
               - !Sub arn:aws:s3:::${S3BucketName}/*
               - !Sub arn:aws:s3:::${S3BucketName}
@@ -203,7 +180,7 @@ Resources:
           sqs_queueUrl: !Sub https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${QueueName}
           s3_region: !Sub ${AWS::Region}
           s3_bucket: !Sub ${S3BucketName}
-          options_daysToArchive: 4
+          options_daysToArchive: !Sub ${DaysToArchive}
           options_includeFollowers: !Sub ${IncludeFollowers}
           options_utfOffset: !Sub ${UtfOffsetInHours}
           options_myUserIdStr: !Sub ${TwitterUserId}
@@ -216,7 +193,7 @@ Resources:
         S3Bucket: !Sub ${UploadedPackageBucketName}
         S3Key: !Sub ${UploadedPackageKeyName}
 
-  LambdaQueueFillter:
+  LambdaQueueFiller:
     Type: 'AWS::Lambda::Function'
     Properties:
       FunctionName: Twitter-TL-Tracker-QueueFiller
@@ -234,7 +211,7 @@ Resources:
           sqs_queueUrl: !Sub https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${QueueName}
           s3_region: !Sub ${AWS::Region}
           s3_bucket: !Sub ${S3BucketName}
-          options_daysToArchive: 4
+          options_daysToArchive: !Sub ${DaysToArchive}
           options_includeFollowers: !Sub ${IncludeFollowers}
           options_utfOffset: !Sub ${UtfOffsetInHours}
           options_myUserIdStr: !Sub ${TwitterUserId}
@@ -265,7 +242,7 @@ Resources:
           sqs_queueUrl: !Sub https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${QueueName}
           s3_region: !Sub ${AWS::Region}
           s3_bucket: !Sub ${S3BucketName}
-          options_daysToArchive: 4
+          options_daysToArchive: !Sub ${DaysToArchive}
           options_includeFollowers: !Sub ${IncludeFollowers}
           options_utfOffset: !Sub ${UtfOffsetInHours}
           options_myUserIdStr: !Sub ${TwitterUserId}
@@ -277,6 +254,38 @@ Resources:
       Code:
         S3Bucket: !Sub ${UploadedPackageBucketName}
         S3Key: !Sub ${UploadedPackageKeyName}
+
+  LambdaTLMerger:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: Twitter-TL-Tracker-merger
+      Description: '[Twitter-TL-Tracker] Merge TL'
+      Environment:
+        Variables:
+          twitter_consumer_key: !Sub ${ConsumerKey}
+          twitter_consumer_secret: !Sub ${ConsumerSecret}
+          twitter_access_token: !Sub ${AccessToken}
+          twitter_access_token_secret: !Sub ${AccessTokenSecret}
+          dynamoDb_region: !Sub ${AWS::Region}
+          dynamoDb_tableName: !Sub ${DynamoDbTableName}
+          dynamoDb_ttlInDays: !Sub ${TTLinDays}
+          sqs_region: !Sub ${AWS::Region}
+          sqs_queueUrl: !Sub https://sqs.${AWS::Region}.amazonaws.com/${AWS::AccountId}/${QueueName}
+          s3_region: !Sub ${AWS::Region}
+          s3_bucket: !Sub ${S3BucketName}
+          options_daysToArchive: !Sub ${DaysToArchive}
+          options_includeFollowers: !Sub ${IncludeFollowers}
+          options_utfOffset: !Sub ${UtfOffsetInHours}
+          options_myUserIdStr: !Sub ${TwitterUserId}
+      Handler: "index.archive"
+      MemorySize: 320
+      Role: !GetAtt IAMRoleForLambda.Arn
+      Runtime: nodejs12.x
+      Timeout: 300
+      Code:
+        S3Bucket: !Sub ${UploadedPackageBucketName}
+        S3Key: !Sub ${UploadedPackageKeyName}
+
 
   LamdaUserTLTrigger:
     Type: "AWS::Events::Rule"
@@ -315,13 +324,34 @@ Resources:
       ScheduleExpression: "cron(*/30 * * * ? *)"
       State: ENABLED
       Targets:
-        - Arn: !GetAtt LambdaQueueFillter.Arn
-          Id: LambdaQueueFillter-every2minutes
+        - Arn: !GetAtt LambdaQueueFiller.Arn
+          Id: LambdaQueueFiller-every2minutes
 
   LambdaInvokePermission3:
     Type: AWS::Lambda::Permission
     Properties: 
       Action: lambda:InvokeFunction
-      FunctionName: !Ref LambdaQueueFillter
+      FunctionName: !Ref LambdaQueueFiller
       Principal: events.amazonaws.com
       SourceArn: !GetAtt LamdaUserQueueTrigger.Arn
+
+
+  LamdaTLMergerTrigger:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: "every midnight"
+      Name: LamdaTLMergerTrigger
+      ScheduleExpression: "cron(5 15 * * ? *)"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt LambdaTLMerger.Arn
+          Id: LambdaTLMerger-everyMidnight
+
+  LambdaInvokePermission4:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref LambdaTLMerger
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt LamdaTLMergerTrigger.Arn
+

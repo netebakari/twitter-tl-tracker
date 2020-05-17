@@ -9,52 +9,16 @@ UserStreamが死んでしまったので少なくともそれと同等のツイ�
 
 サーバーレス。全ての処理はLambdaが行い、結果はS3に保存する。
 
-# 処理概要＆構成
-Lambda3つで構成してある。
-
-## 1. ホームTL取得Lambda
-* ホームTLをLambdaで1～2分ごとに1回取得し、S3に格納する
-  * 1分ごとでもいいけど、同じAPIキーを何か他のことにも使い回しているなら2分おきが無難
-
-## 2. スケジュール作成Lambda
-* 自分のフォロイーを一定時間（30分～1時間程度）おきに1回取得し、巡回するユーザーのリストを作成してSQSに突っ込む
-* これがユーザーTL取得のスケジュールとなる
-* SQSには常時たくさんメッセージが入っているようにする
-
-## 3. ユーザーTL取得Lambda
-* 5分おきにSQSのキューからメッセージ（ユーザーIDが書いてある）を取得し、その人のユーザーTLを取得してS3に格納する
-* 呼び出しレート（15分で900回）を守るように適当に回数調整をする
-* 前回どこまでツイートを取得したかはDynamoDBで管理
-* フォロイーだけではなく、フォロワーを取得対象に加えることも可（ストーカー気質の人向け）
-
-## 4. マージ処理
-**未実装。** 1と3が吐いた全てのファイルを結合し、ソートして重複を排除して1個のファイルに書き出す
-
-# ツイート保存先
-* ホームTLは `s3://YOUR-BUCKET-NAME/raw/2020-12-31/20201231.235959.999.json` のような名前
-* ユーザーTLは `s3://YOUR-BUCKET-NAME/raw/user/2020-12-31/20201231.235959.999_123456789012345678.json` のような名前
-  * どちらも時刻をミリ秒までつけてキーがユニークになるようにしている。時刻そのものにあまり意味はない
-
 # インストール
 ## 1. TwitterのAPIキーを取得
 頑張ってください。
 
-## 2. ビルド＆アップロード
-自分でやりたい人向け。使うだけの人はステップ3にスキップ。
-
-```
-git clone https://github.com/netebakari/twitter-tl-tracker.git
-cd twitter-tl-tracker
-./build.sh
-```
-
-これで `timeline-tracker-latest.zip` が生成されるのでS3の適当な場所にアップロードしておく。
-
-```
-aws s3 cp myFunc.zip s3://YOUR-BUCKET-NAME/myFunc.zip
-```
+## 2. ログ保存用のS3バケットを作成する
+新規作成しても構わないし既存のバケットを使っても構わない。
 
 ## 3. CloudFormationを実行
+東京リージョンからは次のリンクで実行できる。 [CloudFormation](https://ap-northeast-1.console.aws.amazon.com/cloudformation/home?region=ap-northeast-1#/stacks/create/review?templateURL=https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/cloudformation.yaml&stackName=Twitter-TL-Tracker)
+
 AWSの[コンソール](https://ap-northeast-1.console.aws.amazon.com/cloudformation/)から操作する場合は
 
 テンプレートの指定 > テンプレートソース
@@ -74,11 +38,11 @@ https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/clou
     <tr><th>ConsumerKey</th><td>TwitterのConsumer Key</td></tr>
     <tr><th>ConsumerSecret</th><td>TwitterのConsumer Secret</td></tr>
     <tr><th>DaysToArchive</th><td>ツイートをアーカイブする日数。3に設定すると、8/20 0:00を迎えた時点で8/17のツイートがアーカイブ対象となり、8/17のツイートは新規に取得されなくなる</td></tr>
-    <tr><th>DynamoDbTableName</th><td>TLをどこまで取得したかを管理するDynamoDBのテーブル名</td></tr>
+    <tr><th>DynamoDbTableName</th><td>TLをどこまで取得したかを管理するDynamoDBのテーブル名。新規に作成する</td></tr>
     <tr><th>IncludeFollowers</th><td>trueまたはfalseのいずれか。trueを指定すると自分のフォロワーのTLも取得する</td></tr>
     <tr><th>QueueName</th><td>ユーザーTLを取得するスケジュールを管理するために使うSQSのキュー名</td></tr>
     <tr><th>RoleName</th><td>Lambdaに割り当てるロール名</td></tr>
-    <tr><th>S3BucketName</th><td>ツイートのログを保存するS3のバケット名。新規に作成するので既存の名前と重複していてはいけない</td></tr>
+    <tr><th>S3BucketName</th><td>ツイートのログを保存するS3のバケット名</td></tr>
     <tr><th>TTLinDays</th><td>DynamoDBのTTL（日数。3なら72時間）</td></tr>
     <tr><th>TwitterUserId</th><td>自分のTwitterユーザーID。スクリーンネームではないので注意</td></tr>
     <tr><th>UploadedPackageBucketName</th><td>パッケージ(.zip)をアップロードしたS3のバケット名（デフォルト値でよい）</td></tr>
@@ -112,20 +76,42 @@ aws cloudformation create-stack \
                 ParameterKey=UtfOffsetInHours,ParameterValue=9
 ```
 
-## 5. CloudWatch Eventsを調整する
+## 4. CloudWatch Eventsを調整する
 現在は次のような実行間隔になっているが、必要に応じて調整する。
 
 * `Twitter-TL-Tracker-HomeTimeline` : 2分おき
 * `Twitter-TL-Tracker-userTL` : 2分おき
 * `Twitter-TL-Tracker-QueueFiller` : 30分おき
 
-### 注意点
-* "I acknowledge that AWS CloudFormation might create IAM resources with custom names" にチェックを入れるのを忘れないようにする
-* 既存のS3バケットを使いたい場合は次の手順に従う
-  1. とりあえず適当な名前のS3バケット名を指定してstackを作成
-  1. Lambdaの環境変数を修正
-  1. IAM Roleの記述を修正
-  1. バケットを空にして削除
+## 5. 待つ
+ツイートがS3に保存されていく。
+
+# 処理概要＆構成
+Lambda4つで構成してある。
+
+## 1. ホームTL取得Lambda
+* ホームTLをLambdaで1～2分ごとに1回取得し、S3に格納する
+  * 1分ごとでもいいけど、同じAPIキーを何か他のことにも使い回しているなら2分おきが無難
+
+## 2. スケジュール作成Lambda
+* 自分のフォロイーを一定時間（30分～1時間程度）おきに1回取得し、巡回するユーザーのリストを作成してSQSに突っ込む
+* これがユーザーTL取得のスケジュールとなる
+* SQSには常時たくさんメッセージが入っているようにする
+
+## 3. ユーザーTL取得Lambda
+* 5分おきにSQSのキューからメッセージ（ユーザーIDが書いてある）を取得し、その人のユーザーTLを取得してS3に格納する
+* 呼び出しレート（15分で900回）を守るように適当に回数調整をする
+* 前回どこまでツイートを取得したかはDynamoDBで管理
+* フォロイーだけではなく、フォロワーを取得対象に加えることも可（ストーカー気質の人向け）
+
+## 4. マージ処理
+1と3が吐いた全てのファイルを結合し、ソートして重複を排除して1個のファイルに書き出す。
+
+# ツイート保存先
+* ホームTLは `s3://YOUR-BUCKET-NAME/raw/2020-12-31/20201231.235959.999.json` のような名前
+* ユーザーTLは `s3://YOUR-BUCKET-NAME/raw/user/2020-12-31/20201231.235959.999_123456789012345678.json` のような名前
+  * どちらも時刻をミリ秒までつけてキーがユニークになるようにしている。時刻そのものにあまり意味はない
+
 
 # CloudFormationによって作成されるもの
 ## SQS
@@ -137,7 +123,7 @@ primary keyは `id_str` で、ユーザーの簡単な情報と、取得済み�
 RCU/WCUは5にしているが、レコードのサイズが極端に小さいため3でも間に合いそう。
 
 ## Lambda
-3つのLambdaが作成されるが、内容は全て同じ。名前、実行されるハンドラ、割り当てるメモリが違う。
+4つのLambdaが作成されるが、内容は全て同じ。名前、実行されるハンドラ、割り当てるメモリが違う。
 
 ### Twitter-TL-Tracker-HomeTimeline
 * ホームTL取得Lambda
@@ -158,6 +144,12 @@ RCU/WCUは5にしているが、レコードのサイズが極端に小さいた
 * 自動実行: 30分～1時間おき
 * メモリ: 320MB
 
+### Twitter-TL-Tracker-merger
+* ツイートマージLambda
+* ハンドラ: `index.archive`
+* 自動実行: 1日1回
+* メモリ: 320MB
+
 ## IAM Role
 Lambdaに割り当てるためのロール。最低限必要な権限だけを設定してある。
 
@@ -169,14 +161,10 @@ Lambdaに割り当てるためのロール。最低限必要な権限だけを�
 * これをかけると1ヶ月あたり12万回でKMSの無料枠をはみ出す（キー1個分の料金とあわせて$1.3ぐらい）
 * ログを取るためだけのものに出したくない気持ち
 
-## マージ処理を書け
-やる
-
 # Todo
 * likeの定期取得＆差分抽出
 * フォロワー＆フォロイーの定期取得＆差分抽出
   * UserStreamのEvent通知の代わりにしたい
-
 
 # リリースノート
 ## v1.1.0
@@ -185,3 +173,5 @@ Lambdaに割り当てるためのロール。最低限必要な権限だけを�
 ## v1.1.1
 CloudFormationでLambdaの自動実行もやるようにした
 
+## v1.1.2
+ツイートマージ処理を追加

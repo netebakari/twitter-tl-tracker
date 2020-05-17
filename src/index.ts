@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // eslint-disable-next-line import/no-unresolved
 import * as LambdaType from "aws-lambda";
+import * as AWS from "aws-sdk";
 import _ from "lodash";
 import moment from "moment";
 
@@ -27,10 +28,20 @@ exports.archive = async (event: any, context: LambdaType.Context) => {
   console.log("処理開始");
   console.log(event);
 
-  // 引数 daysToBack で指定されていたらその日数だけ戻る（0なら当日、1なら1日前など）。指定がなかったら設定値
-  const daysToBack = +(event.daysToBack ?? env.tweetOption.daysToArchive);
-  for (let i = daysToBack; i >= 0; i--) {
-    await s3.archive(moment().add(-i, "days"), event.destPath);
+  if (typeof event.daysToBack === "number") {
+    // 引数 daysToBack で指定されていたらその日数だけ戻ってログのマージを行う（0なら当日、1なら1日前など）
+    await s3.archive(moment().add(-event.daysToBack, "days"), event.destPath);
+  } else {
+    // 引数がなかったら当日から設定値までを全部マージする
+    for (let i = 0; i <= env.tweetOption.daysToArchive; i++) {
+      console.log(`別にLmabdaを起動して${i}日前のログをマージします`);
+      const splitted = context.invokedFunctionArn.split(":"); // arn:aws:lambda:ap-northeast-1:99999999999:function:TimelineTraker-HomeTimeline
+      const lambda = new AWS.Lambda({ region: splitted[3] });
+      const payload = { daysToBack: i };
+      await lambda
+        .invoke({ FunctionName: splitted[6], InvocationType: "Event", Payload: JSON.stringify(payload) })
+        .promise();
+    }
   }
 };
 

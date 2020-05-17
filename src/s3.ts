@@ -118,7 +118,7 @@ export const getTweets = async (key: string | Buffer, bucketName?: string): Prom
   }
 };
 
-export const putArchivedTweets = async (date: moment.Moment, tweets: Types.TweetEx[]) => {
+export const putArchivedTweets = async (date: moment.Moment, tweets: Types.TweetEx[], objects: string[]) => {
   date.utcOffset(env.tweetOption.utfOffset);
   const year = date.format("YYYY");
   const yearMonth = date.format("YYYY-MM");
@@ -132,6 +132,15 @@ export const putArchivedTweets = async (date: moment.Moment, tweets: Types.Tweet
       Bucket: env.s3.bucket,
       Key: key,
       ContentType: "application/json; charset=utf-8",
+    })
+    .promise();
+
+  await s3
+    .putObject({
+      Body: objects.join("\n"),
+      Bucket: env.s3.bucket,
+      Key: key.replace("json", "txt"),
+      ContentType: "text/plain; charset=utf-8",
     })
     .promise();
 };
@@ -333,18 +342,30 @@ export const archive = async (date: moment.Moment, localPath?: string) => {
     }
   }
 
+  // ソースとなったオブジェクトのリスト
+  const sourceList = [...keys.homeTweets.map((x) => x.key), ...keys.userTweets.map((x) => x.key)];
+
   console.log("マージが終わりました。ソートします");
   allTweets.sort((a, b) => util.compareNumber(a.id_str, b.id_str));
 
   if (!localPath) {
     console.log("ソートが終わりました。アップロードします");
-    await putArchivedTweets(date, allTweets);
+    await putArchivedTweets(date, allTweets, sourceList);
   } else {
     console.log("ソートが終わりました。ファイルに書き出します");
-    const filename = `${localPath}${date.format("YYYY-MM-DD")}.json`;
-    console.log(`${filename} を保存します`);
-    const content = allTweets.map((x) => JSON.stringify(x)).join("\n");
-    fs.writeFileSync(filename, Buffer.from(content, "utf-8"));
+    {
+      const filename = `${localPath}${date.format("YYYY-MM-DD")}.json`;
+      console.log(`${filename} を保存します`);
+      const content = allTweets.map((x) => JSON.stringify(x)).join("\n");
+      fs.writeFileSync(filename, Buffer.from(content, "utf-8"));
+    }
+
+    {
+      const filename = `${localPath}${date.format("YYYY-MM-DD")}.json`;
+      console.log(`${filename} を保存します`);
+      const content = sourceList.join("\n");
+      fs.writeFileSync(filename, Buffer.from(content, "utf-8"));
+    }
   }
   return true;
 };
