@@ -135,6 +135,8 @@ export const putArchivedTweets = async (date: moment.Moment, tweets: Types.Tweet
     })
     .promise();
 
+  console.log(`s3://${env.s3.bucket}/${key}を保存しました`);
+
   await s3
     .putObject({
       Body: objects.join("\n"),

@@ -143,36 +143,41 @@ export const getRecentTweets = async (
   user: ParamTypes.UserParamType | null,
   sinceId: string
 ): Promise<{ apiCallCount: number; tweets: Types.TweetEx[] }> => {
-  const timelieType: Types.TimeLineType = user === null ? "HomeTL" : "UserTL";
-  const firstChunk = await getTweets(timelieType, user, { sinceId: sinceId });
-  if (firstChunk.length < 180) {
-    return { apiCallCount: 1, tweets: firstChunk };
-  }
-  let minimumId = util.getMinimumId(firstChunk);
-
-  const maxloopCount = user ? 15 : 3; // ホームタイムラインは最大800件まで。最初に1回取ったから3回ループする
-  const chunks: Types.TweetEx[][] = [firstChunk];
-  let apiCallCount = 1;
-  for (let i = 0; i < maxloopCount; i++) {
-    const chunk = await getTweets(timelieType, user, { maxId: minimumId });
-    apiCallCount++;
-    chunks.push(chunk);
-    if (chunk.length === 0) {
-      break;
+  try {
+    const timelieType: Types.TimeLineType = user === null ? "HomeTL" : "UserTL";
+    const firstChunk = await getTweets(timelieType, user, { sinceId: sinceId });
+    if (firstChunk.length < 180) {
+      return { apiCallCount: 1, tweets: firstChunk };
     }
-    const newMinimumId = util.getMinimumId(chunk);
-    // IDの最小値が更新できなかったか、IDの最小値が最初に与えたsinceIdと同等以下になったら終わり
-    if (minimumId === newMinimumId || util.compareNumber(sinceId, newMinimumId) >= 0) {
-      break;
-    }
-    minimumId = newMinimumId;
-  }
+    let minimumId = util.getMinimumId(firstChunk);
 
-  const tweets = _.flatten(chunks).filter((x) => util.compareNumber(x.id_str, sinceId) >= 0);
-  return {
-    apiCallCount,
-    tweets,
-  };
+    const maxloopCount = user ? 15 : 3; // ホームタイムラインは最大800件まで。最初に1回取ったから3回ループする
+    const chunks: Types.TweetEx[][] = [firstChunk];
+    let apiCallCount = 1;
+    for (let i = 0; i < maxloopCount; i++) {
+      const chunk = await getTweets(timelieType, user, { maxId: minimumId });
+      apiCallCount++;
+      chunks.push(chunk);
+      if (chunk.length === 0) {
+        break;
+      }
+      const newMinimumId = util.getMinimumId(chunk);
+      // IDの最小値が更新できなかったか、IDの最小値が最初に与えたsinceIdと同等以下になったら終わり
+      if (minimumId === newMinimumId || util.compareNumber(sinceId, newMinimumId) >= 0) {
+        break;
+      }
+      minimumId = newMinimumId;
+    }
+
+    const tweets = _.flatten(chunks).filter((x) => util.compareNumber(x.id_str, sinceId) >= 0);
+    return {
+      apiCallCount,
+      tweets,
+    };
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
 };
 
 /**
@@ -224,10 +229,10 @@ export const getTweets = async (
   console.log(`TwitterClient#getTweets(): endpoint=${endpoint}, parameter=${JSON.stringify(params)}`);
 
   const result = await client.get(endpoint, params);
-  if (Types.isTweets(result.data)) {
-    return alterTweet(result.data);
+  if (Types.isTweets(result)) {
+    return alterTweet(result);
   } else {
-    console.error(result.data);
+    console.error(result);
     throw new Error("戻り値が変です");
   }
 };
