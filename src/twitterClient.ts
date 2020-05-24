@@ -13,6 +13,31 @@ import * as util from "./util";
 const client = new Twitter(token.twitterToken);
 
 /**
+ * application/rate_limit_status のキャッシュ
+ */
+let apiStatusCache: TwitterTypes.ApiRateLimitStatusMap | undefined = undefined;
+
+/**
+ * API残り実行可能回数を取得する
+ */
+export const getApiRemainingCount = async (apiName: TwitterTypes.ApiName): Promise<number> => {
+  if (!apiStatusCache) {
+    apiStatusCache = {};
+    const data = await client.get("application/rate_limit_status");
+    TwitterTypes.assertsApiRateLimitStatus(data);
+    // todo: なんとかする
+    const _data: any = data.resources;
+    for (const apiCategoryName of Object.keys(_data)) {
+      const map = _data[apiCategoryName];
+      for (const apiName of Object.keys(map)) {
+        apiStatusCache[apiName] = (map[apiName] as any).remaining as number;
+      }
+    }
+  }
+  return apiStatusCache[apiName] ?? -1;
+};
+
+/**
  * users/lookup を叩いてユーザー情報を取得する
  * @param userIds ユーザーIDの配列。100件ごとにまとめてAPIがコールされる
  */
