@@ -127,9 +127,13 @@ exports.homeTimeline = async (event: any, context: LambdaType.Context) => {
 exports.userTL = async (event: any, context: LambdaType.Context) => {
   const startTimeInMillis = new Date().getTime();
 
-  // 制限時間・回数
-  const timelimitInSec = Math.floor(context.getRemainingTimeInMillis() / 1000);
-  const maxApiCallCount = timelimitInSec * 0.95;
+  const maxApiCallCount = (await twitter.getApiRemainingCount("/statuses/user_timeline")) - 16;
+  if (maxApiCallCount <= 0) {
+    console.log("API呼び出し回数が残っていないので何もせずに終了します");
+    return;
+  }
+
+  console.log(`処理開始。最大 /statuses/user_timeline の最大呼び出し回数 = ${maxApiCallCount}`);
 
   // 結果
   const result: { tweets: Types.TweetEx[]; receiptHandle: string }[] = [];
