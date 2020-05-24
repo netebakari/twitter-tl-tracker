@@ -156,7 +156,7 @@ export const putArchivedTweets = async (date: moment.Moment, tweets: Types.Tweet
 export const putUserTweets = async (tweets: Types.TweetEx[]) => {
   for (const chunk of util.groupByDate(tweets)) {
     const content = chunk.tweets.map((x) => JSON.stringify(x)).join("\n");
-    const now = moment().format("YYYYMMDD.HHmmss.SSS");
+    const now = moment().utcOffset(env.tweetOption.utfOffset).format("YYYYMMDD.HHmmss.SSS");
     const userId = chunk.tweets[0].user.id_str;
     const keyName = `raw/user/${chunk.date}/${now}_${userId}.json`;
     console.log(`s3://${env.s3.bucket}/${keyName}を保存します`);
@@ -179,7 +179,7 @@ export const putUserTweets = async (tweets: Types.TweetEx[]) => {
 export const putTimelineTweets = async (tweets: Types.TweetEx[]) => {
   for (const chunk of util.groupByDate(tweets)) {
     const content = chunk.tweets.map((x) => JSON.stringify(x)).join("\n");
-    const now = moment().format("YYYYMMDD.HHmmss.SSS");
+    const now = moment().utcOffset(env.tweetOption.utfOffset).format("YYYYMMDD.HHmmss.SSS");
     const keyName = `raw/home/${chunk.date}/${now}.json`;
     console.log(`s3://${env.s3.bucket}/${keyName}を保存します`);
     await s3
