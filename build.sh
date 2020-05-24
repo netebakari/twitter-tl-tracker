@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ -e myFunc.zip ]; then
+if [ -e timeline-tracker-latest.zip ]; then
    rm timeline-tracker-latest.zip
 fi
 
