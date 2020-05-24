@@ -138,11 +138,11 @@ exports.userTL = async (event: any, context: LambdaType.Context) => {
   // 結果
   const result: { tweets: Types.TweetEx[]; receiptHandle: string }[] = [];
 
-  // 実行時間が残り3秒になるか、失敗回数が2回に達したか、API呼び出し回数が（設定時間×0.95）回になったらループ終了
+  // 実行時間が残り10秒になるか、失敗回数が2回に達したかしたらループ終了
   let totalApiCallCount = 0;
   let totalFailCount = 0;
   let loopCount = 1;
-  while (totalApiCallCount <= maxApiCallCount && totalFailCount < 2 && context.getRemainingTimeInMillis() > 3000) {
+  while (totalApiCallCount <= maxApiCallCount && totalFailCount < 2 && context.getRemainingTimeInMillis() > 10000) {
     console.log(
       `ループ${loopCount++}回目... API呼び出し回数: ${totalApiCallCount}, エラー: ${totalFailCount}）, 経過ミリ秒=${
         new Date().getTime() - startTimeInMillis
@@ -265,6 +265,7 @@ const processSingleQueueMessage = async (): Promise<UserTweetsFetchResultType> =
       return { isError: false, apiCallCount: apiCallCount };
     }
     // それ以外のエラー時はリトライするためにメッセージを放置する
+    console.error("鍵アカウントでも削除済みアカウントでもないエラー");
     console.error(e);
     return { isError: true, apiCallCount: apiCallCount };
   }
