@@ -80,6 +80,7 @@ exports.event = async (event: any, context: LambdaType.Context) => {
  * キューを埋める
  */
 exports.hourlyTask = async (event: any, context: LambdaType.Context) => {
+  console.log("start");
   const messageCount = await sqs.getMessageCount();
   console.log(`現在キューに入っているメッセージはだいたい${messageCount}件です`);
   if (messageCount > 3600) {
@@ -87,16 +88,24 @@ exports.hourlyTask = async (event: any, context: LambdaType.Context) => {
     return true;
   }
 
-  let ids: string[] = [];
   const followeeIds = await twitter.getFriendsOrFollowersIds({ userId: env.tweetOption.myUserIdStr }, true);
-  while (messageCount + ids.length < 3600) {
-    ids = _.flatten([ids, followeeIds]);
+  let followerIds: string[] = [];
+  if (env.tweetOption.includeFollowers) {
+    followerIds = await twitter.getFriendsOrFollowersIds({ userId: env.tweetOption.myUserIdStr }, false);
   }
 
-  console.log(`新しくユーザーIDを${ids.length}件投入します`);
-  for (const id of ids) {
-    await sqs.send(id);
+  let ids: string[] = [];
+  while (messageCount + ids.length < 3600) {
+    ids = _.flatten([ids, followeeIds, followerIds]);
   }
+
+  const shuffled = _.shuffle(_.uniq(ids));
+
+  console.log(`新しくユーザーIDを${shuffled.length}件投入します`);
+  for (let i = 0; i < shuffled.length / 10; i++) {
+    await sqs.send(shuffled.slice(i * 10, i * 10 + 10));
+  }
+
   return true;
 };
 
