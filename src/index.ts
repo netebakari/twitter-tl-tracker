@@ -80,7 +80,6 @@ exports.event = async (event: any, context: LambdaType.Context) => {
  * キューを埋める
  */
 exports.hourlyTask = async (event: any, context: LambdaType.Context) => {
-  console.log("start");
   const messageCount = await sqs.getMessageCount();
   console.log(`現在キューに入っているメッセージはだいたい${messageCount}件です`);
   if (messageCount > 3600) {
