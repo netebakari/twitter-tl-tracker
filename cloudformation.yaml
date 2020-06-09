@@ -219,7 +219,7 @@ Resources:
       MemorySize: 128
       Role: !GetAtt IAMRoleForLambda.Arn
       Runtime: nodejs12.x
-      Timeout: 120
+      Timeout: 240
       Code:
         S3Bucket: !Sub ${UploadedPackageBucketName}
         S3Key: !Sub ${UploadedPackageKeyName}

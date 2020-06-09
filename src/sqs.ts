@@ -3,13 +3,25 @@ import * as AWS from "aws-sdk";
 import * as env from "./env";
 const sqs = new AWS.SQS({ region: env.sqs.region });
 
-export const send = async (userId: string) => {
-  const params = {
-    MessageBody: userId,
+/**
+ * IDをSQSに送信する
+ * @param userIds 10件までのユーザーIDの配列。重複はないことを前提
+ */
+export const send = async (userIds: string[]) => {
+  // 時刻は13文字
+  const timestamp = new Date().getTime();
+
+  const params: AWS.SQS.SendMessageBatchRequest = {
+    Entries: userIds.map((id) => {
+      return {
+        Id: `${id}_${timestamp}`,
+        MessageBody: id,
+      };
+    }),
     QueueUrl: env.sqs.queueUrl,
   };
 
-  return sqs.sendMessage(params).promise();
+  return sqs.sendMessageBatch(params).promise();
 };
 
 export const receiveMessage = async () => {
@@ -40,7 +52,7 @@ export const deleteMessage = async (receiptHandle: string) => {
  * キューに入っているメッセージの数を返す
  */
 export const getMessageCount = async () => {
-  const params = {
+  const params: AWS.SQS.GetQueueAttributesRequest = {
     QueueUrl: env.sqs.queueUrl,
     AttributeNames: ["ApproximateNumberOfMessages"],
   };
