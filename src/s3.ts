@@ -148,17 +148,17 @@ export const putArchivedTweets = async (date: moment.Moment, tweets: Types.Tweet
 };
 
 /**
- * 特定のユーザーのツイートを保存する。ツイートは日付ごとにグループ分けして次のキーで保存する。
+ * ユーザーTLのツイートを保存する。ツイートは日付ごとにグループ分けして次のキーで保存する。
  * raw/user/YYYY-MM-DD/YYYYMMDD.HHmmss.SSS_9999999999.json
  * （前半の日付はツイートの日付、後半のタムスタンプは現在日時。単に重複しないユニークな値として利用している）
+ * 1個のオブジェクトには複数人のツイートが入る。
  * @param tweets
  */
 export const putUserTweets = async (tweets: Types.TweetEx[]) => {
   for (const chunk of util.groupByDate(tweets)) {
     const content = chunk.tweets.map((x) => JSON.stringify(x)).join("\n");
-    const now = moment().format("YYYYMMDD.HHmmss.SSS");
-    const userId = chunk.tweets[0].user.id_str;
-    const keyName = `raw/user/${chunk.date}/${now}_${userId}.json`;
+    const now = moment().utcOffset(env.tweetOption.utfOffset).format("YYYYMMDD.HHmmss.SSS");
+    const keyName = `raw/user/${chunk.date}/${now}.json`;
     console.log(`s3://${env.s3.bucket}/${keyName}を保存します`);
     await s3
       .putObject({
@@ -179,7 +179,7 @@ export const putUserTweets = async (tweets: Types.TweetEx[]) => {
 export const putTimelineTweets = async (tweets: Types.TweetEx[]) => {
   for (const chunk of util.groupByDate(tweets)) {
     const content = chunk.tweets.map((x) => JSON.stringify(x)).join("\n");
-    const now = moment().format("YYYYMMDD.HHmmss.SSS");
+    const now = moment().utcOffset(env.tweetOption.utfOffset).format("YYYYMMDD.HHmmss.SSS");
     const keyName = `raw/home/${chunk.date}/${now}.json`;
     console.log(`s3://${env.s3.bucket}/${keyName}を保存します`);
     await s3

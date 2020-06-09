@@ -1,13 +1,13 @@
-// import * as env from "../env";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const _module = require("../index");
 // import * as _module from "../index";
+import * as client from "../twitterClient";
 const _event: any = {};
 
 /**
  * コマンドラインからの実行用
  */
-(async () => {
+const go = async () => {
   switch (process.argv[2]) {
     case "user": {
       const result = await _module.userTL(_event);
@@ -45,4 +45,8 @@ const _event: any = {};
       break;
     }
   }
+};
+
+(async () => {
+  go();
 })();
