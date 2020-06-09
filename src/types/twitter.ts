@@ -18,8 +18,9 @@
 // <reference types="geojson" />
 */
 
+import * as util from "./util";
+import * as ApiStatusType from "./apiStatus";
 export type StreamEndpoint = "statuses/filter" | "statuses/sample" | "statuses/firehose" | "user" | "site";
-
 export type ResultType = "mixed" | "popular" | "recent";
 
 /**
@@ -301,4 +302,15 @@ export interface Params {
   stringify_ids?: boolean;
   in_reply_to_status_id?: number | string;
   page?: number;
+}
+
+export type ApiName = ApiStatusType.ApiName;
+export type ApiCategoryName = ApiStatusType.ApiCategoryName;
+export type ApiRateLimitStatus = ApiStatusType.ApiRateLimitStatus;
+export type ApiRateLimitStatusMap = ApiStatusType.ApiRateLimitStatusMap;
+export function assertsApiRateLimitStatus(arg: any): asserts arg is ApiRateLimitStatus {
+  util.mustBeObject(arg);
+  util.mustBeObject(arg.rate_limit_context);
+  util.mustBeString(arg.rate_limit_context, "access_token");
+  util.mustBeObject(arg.resources);
 }

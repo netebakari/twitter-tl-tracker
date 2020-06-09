@@ -127,18 +127,29 @@ exports.homeTimeline = async (event: any, context: LambdaType.Context) => {
 exports.userTL = async (event: any, context: LambdaType.Context) => {
   const startTimeInMillis = new Date().getTime();
 
-  // 制限時間・回数
-  const timelimitInSec = Math.floor(context.getRemainingTimeInMillis() / 1000);
-  const maxApiCallCount = timelimitInSec * 0.95;
+  const remainingApiCallCount = await twitter.getApiRemainingCount("/statuses/user_timeline");
+  if (remainingApiCallCount <= 16) {
+    console.log("API呼び出し回数が残っていないので何もせずに終了します");
+    return;
+  }
+
+  // とりあえず最大100回にしておく
+  const maxApiCallCount = Math.min(remainingApiCallCount, 100);
+
+  console.log(`処理開始。最大 /statuses/user_timeline の最大呼び出し回数 = ${maxApiCallCount}`);
 
   // 結果
   const result: { tweets: Types.TweetEx[]; receiptHandle: string }[] = [];
 
-  // 実行時間が残り3秒になるか、失敗回数が2回に達したか、API呼び出し回数が（設定時間×0.95）回になったらループ終了
+  // 実行時間が残り10秒になるか、失敗回数が2回に達したか、API呼び出し回数が残り16回になったらループ終了
   let totalApiCallCount = 0;
   let totalFailCount = 0;
   let loopCount = 1;
-  while (totalApiCallCount <= maxApiCallCount && totalFailCount < 2 && context.getRemainingTimeInMillis() > 3000) {
+  while (
+    totalApiCallCount <= maxApiCallCount - 16 &&
+    totalFailCount < 2 &&
+    context.getRemainingTimeInMillis() > 10000
+  ) {
     console.log(
       `ループ${loopCount++}回目... API呼び出し回数: ${totalApiCallCount}, エラー: ${totalFailCount}）, 経過ミリ秒=${
         new Date().getTime() - startTimeInMillis
@@ -250,17 +261,18 @@ const processSingleQueueMessage = async (): Promise<UserTweetsFetchResultType> =
       },
     };
   } catch (e) {
-    if (e.message.indexOf("Not authorized") >= 0) {
+    if (e.toString().indexOf("Not authorized") >= 0) {
       console.log("鍵がかかったアカウントでした。どうしようもないのでメッセージを削除します");
       await sqs.deleteMessage(queueMessage.receiptHandle);
       return { isError: false, apiCallCount: apiCallCount };
     }
-    if (e.message.indexOf("that page does not exist") >= 0) {
+    if (e.toString().indexOf("that page does not exist") >= 0) {
       console.log("アカウントが消えていました。どうしようもないのでメッセージを削除します");
       await sqs.deleteMessage(queueMessage.receiptHandle);
       return { isError: false, apiCallCount: apiCallCount };
     }
     // それ以外のエラー時はリトライするためにメッセージを放置する
+    console.error("鍵アカウントでも削除済みアカウントでもないエラー");
     console.error(e);
     return { isError: true, apiCallCount: apiCallCount };
   }
