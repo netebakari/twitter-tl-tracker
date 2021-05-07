@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "dotenv": "^8.2.0",
-    "lodash": "^4.17.20",
+    "lodash": "^4.17.21",
     "moment": "^2.29.0",
     "twitter-lite": "^0.14.0"
   }
