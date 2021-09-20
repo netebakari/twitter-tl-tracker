@@ -269,19 +269,21 @@ const processSingleQueueMessage = async (): Promise<UserTweetsFetchResultType> =
       },
     };
   } catch (e) {
-    if (e.toString().indexOf("Not authorized") >= 0) {
-      console.log("鍵がかかったアカウントでした。どうしようもないのでメッセージを削除します");
-      await sqs.deleteMessage(queueMessage.receiptHandle);
-      return { isError: false, apiCallCount: apiCallCount };
-    }
-    if (e.toString().indexOf("that page does not exist") >= 0) {
-      console.log("アカウントが消えていました。どうしようもないのでメッセージを削除します");
-      await sqs.deleteMessage(queueMessage.receiptHandle);
-      return { isError: false, apiCallCount: apiCallCount };
+    if (e instanceof Error) {
+      if (e.toString().indexOf("Not authorized") >= 0) {
+        console.log("鍵がかかったアカウントでした。どうしようもないのでメッセージを削除します");
+        await sqs.deleteMessage(queueMessage.receiptHandle);
+        return { isError: false, apiCallCount: apiCallCount };
+      }
+      if (e.toString().indexOf("that page does not exist") >= 0) {
+        console.log("アカウントが消えていました。どうしようもないのでメッセージを削除します");
+        await sqs.deleteMessage(queueMessage.receiptHandle);
+        return { isError: false, apiCallCount: apiCallCount };
+      }
     }
     // それ以外のエラー時はリトライするためにメッセージを放置する
     console.error("鍵アカウントでも削除済みアカウントでもないエラー");
-    console.error(e);
+    console.error(e as any);
     return { isError: true, apiCallCount: apiCallCount };
   }
 };

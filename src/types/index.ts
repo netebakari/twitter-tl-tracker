@@ -48,8 +48,11 @@ export type Tweet = Twitter.Status;
 
 export function assertTweet(arg: any): asserts arg is Tweet {
   util.mustBeObject(arg);
+  util.mustBeString(arg, "created_at");
   util.mustBeNumber(arg, "id");
   util.mustBeString(arg, "id_str");
+  util.mustBeString(arg, "full_text");
+  util.mustBeBoolean(arg, "truncated");
   // TODO: 手抜き
 }
 
