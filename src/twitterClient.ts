@@ -1,14 +1,15 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import * as _ from "lodash";
-import moment from "moment";
-import Twitter from "twitter-lite";
-
-import * as env from "./env";
-import * as token from "./twitterToken";
-import * as Types from "./types";
-import * as ParamTypes from "./types/parameters";
-import * as TwitterTypes from "./types/twitter";
-import * as util from "./util";
+import * as _ from "lodash"
+import moment from "moment"
+import dayjs from "dayjs"
+dayjs.extend(require("dayjs/plugin/utc"))
+import Twitter from "twitter-lite"
+import * as env from "./env"
+import * as token from "./twitterToken"
+import * as Types from "./types"
+import * as ParamTypes from "./types/parameters"
+import * as TwitterTypes from "./types/twitter"
+import * as util from "./util"
 
 const client = new Twitter(token.twitterToken);
 

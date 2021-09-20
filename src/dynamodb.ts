@@ -1,6 +1,7 @@
 import * as AWS from "aws-sdk";
 import moment from "moment";
-
+import dayjs from "dayjs"
+dayjs.extend(require("dayjs/plugin/utc"))
 import * as env from "./env";
 import * as ParamTypes from "./types/parameters";
 

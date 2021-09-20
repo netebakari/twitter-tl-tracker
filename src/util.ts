@@ -1,8 +1,9 @@
-import * as _ from "lodash";
-import moment from "moment";
-
-import * as env from "./env";
-import * as Types from "./types";
+import * as _ from "lodash"
+import moment from "moment"
+import dayjs from "dayjs"
+dayjs.extend(require("dayjs/plugin/utc"))
+import * as env from "./env"
+import * as Types from "./types"
 
 /**
  * 現在時刻を "2018-08-11T12:34:45+0900" 形式で取得する（環境変数のutfOffsetを反映する）

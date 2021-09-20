@@ -1,12 +1,13 @@
-import * as assert from "assert";
-import * as fs from "fs";
-
-import * as s3 from "../src/s3";
-import * as Types from "../src/types";
-import * as ParamTypes from "../src/types/parameters";
-import * as util from "../src/util";
-import moment = require("moment");
-import * as Twitter from "../src/twitterClient";
+import * as assert from "assert"
+import * as fs from "fs"
+import * as s3 from "../src/s3"
+import * as Types from "../src/types"
+import * as ParamTypes from "../src/types/parameters"
+import * as util from "../src/util"
+import moment = require("moment")
+import dayjs from "dayjs"
+dayjs.extend(require("dayjs/plugin/utc"))
+import * as Twitter from "../src/twitterClient"
 
 const loadJson = (filename: string): any => {
   const buffer = fs.readFileSync(`test/fixtures/${filename}`);

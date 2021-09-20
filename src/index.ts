@@ -4,7 +4,8 @@ import * as LambdaType from "aws-lambda";
 import * as AWS from "aws-sdk";
 import _ from "lodash";
 import moment from "moment";
-
+import dayjs from "dayjs"
+dayjs.extend(require("dayjs/plugin/utc"))
 import * as dynamo from "./dynamodb";
 import * as env from "./env";
 import * as s3 from "./s3";
