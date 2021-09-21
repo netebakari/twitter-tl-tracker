@@ -236,7 +236,7 @@ const processSingleQueueMessage = async (): Promise<UserTweetsFetchResultType> =
       // SQSにはあったけどDynamoDBには未登録。指定された日数分（上限3200件）を全部取得
       sinceId = util.getStatusId(env.tweetOption.daysToArchive - 1);
       console.log(
-        `ユーザーテーブルに存在しないユーザーでした。` +
+        `userId=${queueMessage.userId} はユーザーテーブルに存在しないユーザーでした。` +
           `${env.tweetOption.daysToArchive - 1}日前の0:00以降=${sinceId}以降を取得します`
       );
     } else {
@@ -269,14 +269,19 @@ const processSingleQueueMessage = async (): Promise<UserTweetsFetchResultType> =
       },
     };
   } catch (e) {
-    if (e instanceof Error) {
-      if (e.toString().indexOf("Not authorized") >= 0) {
+    if (Types.isTwitterErrorObject(e)) {
+      if (e.error.indexOf("Not authorized") >= 0) {
         console.log("鍵がかかったアカウントでした。どうしようもないのでメッセージを削除します");
         await sqs.deleteMessage(queueMessage.receiptHandle);
         return { isError: false, apiCallCount: apiCallCount };
       }
-      if (e.toString().indexOf("that page does not exist") >= 0) {
+      if (e.error.indexOf("that page does not exist") >= 0) {
         console.log("アカウントが消えていました。どうしようもないのでメッセージを削除します");
+        await sqs.deleteMessage(queueMessage.receiptHandle);
+        return { isError: false, apiCallCount: apiCallCount };
+      }
+      if (e.error.indexOf("blocked") >= 0) {
+        console.log("ブロックされていました。どうしようもないのでメッセージを削除します");
         await sqs.deleteMessage(queueMessage.receiptHandle);
         return { isError: false, apiCallCount: apiCallCount };
       }

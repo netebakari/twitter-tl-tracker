@@ -181,3 +181,22 @@ export function isFriendsOrFollowersIdResultType(arg: any): arg is FriendsOrFoll
     return false;
   }
 }
+
+
+export interface TwitterErrorObject {
+  request: string;
+  error: string;
+}
+export function assertsTwitterErrorObject(arg:any): asserts arg is TwitterErrorObject {
+  util.mustBeObject(arg);
+  util.mustBeString(arg, "request");
+  util.mustBeString(arg, "error");
+}
+export function isTwitterErrorObject(arg:any): arg is TwitterErrorObject {
+  try {
+    assertsTwitterErrorObject(arg);
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
