@@ -127,7 +127,7 @@ describe("type guards", () => {
       try {
         Types.assertUser(data);
       } catch (e) {
-        assert.fail(e);
+        assert.fail(e as any);
       }
     });
     it("protected user", () => {
@@ -135,7 +135,7 @@ describe("type guards", () => {
       try {
         Types.assertUser(data);
       } catch (e) {
-        assert.fail(e);
+        assert.fail(e as any);
       }
     });
   });
@@ -169,11 +169,11 @@ describe("type guards", () => {
       try {
         Types.assertFriendsAndFollowersIdsType(data1);
         assert.fail("must fail!");
-      } catch (e) {}
+      } catch (e) { }
       try {
         Types.assertFriendsAndFollowersIdsType(data2);
         assert.fail("must fail!");
-      } catch (e) {}
+      } catch (e) { }
     });
 
     it("empty object", () => {
@@ -181,7 +181,7 @@ describe("type guards", () => {
       try {
         Types.assertFriendsAndFollowersIdsType(data);
         assert.fail("must fail!");
-      } catch (e) {}
+      } catch (e) { }
     });
 
     it("includes other than string", () => {
@@ -192,7 +192,7 @@ describe("type guards", () => {
       try {
         Types.assertFriendsAndFollowersIdsType(data);
         assert.fail("must fail!");
-      } catch (e) {}
+      } catch (e) { }
     });
   });
 
@@ -248,4 +248,11 @@ describe("Twitter API test (call APIs actually)", () => {
       assert.equal(userIds.length > 0, true);
     });
   });
+
+  describe("get tweets", () => {
+    it("@twitter timeline", async () => {
+      const tweets = await Twitter.getRecentTweets({ screenName: "twitter" }, "1435990839013126149");
+      assert.ok(Types.isTweetExArray(tweets.tweets));
+    });
+  })
 });

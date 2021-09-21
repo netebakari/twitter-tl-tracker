@@ -48,8 +48,11 @@ export type Tweet = Twitter.Status;
 
 export function assertTweet(arg: any): asserts arg is Tweet {
   util.mustBeObject(arg);
+  util.mustBeString(arg, "created_at");
   util.mustBeNumber(arg, "id");
   util.mustBeString(arg, "id_str");
+  util.mustBeString(arg, "full_text");
+  util.mustBeBoolean(arg, "truncated");
   // TODO: 手抜き
 }
 
@@ -175,6 +178,25 @@ export function isFriendsOrFollowersIdResultType(arg: any): arg is FriendsOrFoll
     assertsFriendsOrFollowersIdResultType(arg);
     return true;
   } catch (e) {
+    return false;
+  }
+}
+
+
+export interface TwitterErrorObject {
+  request: string;
+  error: string;
+}
+export function assertsTwitterErrorObject(arg:any): asserts arg is TwitterErrorObject {
+  util.mustBeObject(arg);
+  util.mustBeString(arg, "request");
+  util.mustBeString(arg, "error");
+}
+export function isTwitterErrorObject(arg:any): arg is TwitterErrorObject {
+  try {
+    assertsTwitterErrorObject(arg);
+    return true;
+  } catch(e) {
     return false;
   }
 }
