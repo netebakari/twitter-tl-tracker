@@ -21,19 +21,27 @@ export interface FriendsAndFollowersIdsType {
   followersIds: string[];
 }
 
-export function assertFriendsAndFollowersIdsType(arg: any): asserts arg is FriendsAndFollowersIdsType {
+export function assertFriendsAndFollowersIdsType(
+  arg: any
+): asserts arg is FriendsAndFollowersIdsType {
   util.mustBeObject(arg);
   util.mustBeArray(arg, "friendsIds");
   if (!arg.friendsIds.every((x: any) => typeof x == "string")) {
-    throw new AssertionError({ message: "arg.friendsIds contains non-string value" });
+    throw new AssertionError({
+      message: "arg.friendsIds contains non-string value",
+    });
   }
   util.mustBeArray(arg, "followersIds");
   if (!arg.followersIds.every((x: any) => typeof x == "string")) {
-    throw new AssertionError({ message: "arg.followersIds contains non-string value" });
+    throw new AssertionError({
+      message: "arg.followersIds contains non-string value",
+    });
   }
 }
 
-export function isFriendsAndFollowersIdsType(arg: any): arg is FriendsAndFollowersIdsType {
+export function isFriendsAndFollowersIdsType(
+  arg: any
+): arg is FriendsAndFollowersIdsType {
   try {
     assertFriendsAndFollowersIdsType(arg);
     return true;
@@ -123,7 +131,6 @@ export function assertUser(arg: any): asserts arg is User {
   }
   util.mustBeBoolean(arg, "protected");
 
-  
   util.mustBeString(arg, "created_at");
   util.mustBeBoolean(arg, "default_profile");
   util.mustBeBoolean(arg, "default_profile_image");
@@ -158,22 +165,32 @@ export type FriendsOrFollowersIdResultType = {
   total_count: null | number;
 };
 
-export function assertsFriendsOrFollowersIdResultType(arg: any): asserts arg is FriendsOrFollowersIdResultType {
+export function assertsFriendsOrFollowersIdResultType(
+  arg: any
+): asserts arg is FriendsOrFollowersIdResultType {
   util.mustBeObject(arg);
   util.mustBeArray(arg, "ids");
   if (arg.ids.some((x: any) => typeof x !== "string")) {
-    throw new AssertionError({ message: "arg.ids contains non-string value", actual: arg.ids });
+    throw new AssertionError({
+      message: "arg.ids contains non-string value",
+      actual: arg.ids,
+    });
   }
   util.mustBeNumber(arg, "next_cursor");
   util.mustBeString(arg, "next_cursor_str");
   util.mustBeNumber(arg, "previous_cursor");
   util.mustBeString(arg, "previous_cursor_str");
   if (arg.total_count !== null && typeof arg.total_count !== "number") {
-    throw new AssertionError({ message: "arg.total_count is neighter null nor a number", actual: arg.total_count });
+    throw new AssertionError({
+      message: "arg.total_count is neighter null nor a number",
+      actual: arg.total_count,
+    });
   }
 }
 
-export function isFriendsOrFollowersIdResultType(arg: any): arg is FriendsOrFollowersIdResultType {
+export function isFriendsOrFollowersIdResultType(
+  arg: any
+): arg is FriendsOrFollowersIdResultType {
   try {
     assertsFriendsOrFollowersIdResultType(arg);
     return true;
@@ -182,21 +199,44 @@ export function isFriendsOrFollowersIdResultType(arg: any): arg is FriendsOrFoll
   }
 }
 
-
 export interface TwitterErrorObject {
   request: string;
   error: string;
 }
-export function assertsTwitterErrorObject(arg:any): asserts arg is TwitterErrorObject {
+export function assertsTwitterErrorObject(
+  arg: any
+): asserts arg is TwitterErrorObject {
   util.mustBeObject(arg);
   util.mustBeString(arg, "request");
   util.mustBeString(arg, "error");
 }
-export function isTwitterErrorObject(arg:any): arg is TwitterErrorObject {
+export function isTwitterErrorObject(arg: any): arg is TwitterErrorObject {
   try {
     assertsTwitterErrorObject(arg);
     return true;
-  } catch(e) {
+  } catch (e) {
     return false;
   }
 }
+
+type SingleNumberWithoutZero =
+  | "1"
+  | "2"
+  | "3"
+  | "4"
+  | "5"
+  | "6"
+  | "7"
+  | "8"
+  | "9";
+type SingleNumber = SingleNumberWithoutZero | "0";
+export type DateType = {
+  year: `20${SingleNumber}${SingleNumber}`;
+  month: `0${SingleNumberWithoutZero}` | "10" | "11" | "12";
+  day:
+    | `0${SingleNumberWithoutZero}`
+    | `1${SingleNumber}`
+    | `2${SingleNumber}`
+    | "30"
+    | "31";
+};

@@ -6,7 +6,8 @@ import * as ParamTypes from "../src/types/parameters"
 import * as util from "../src/util"
 import moment = require("moment")
 import dayjs from "dayjs"
-dayjs.extend(require("dayjs/plugin/utc"))
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
 import * as Twitter from "../src/twitterClient"
 
 const loadJson = (filename: string): any => {
@@ -226,34 +227,58 @@ describe("util", () => {
   });
 });
 
-describe("Twitter API test (call APIs actually)", () => {
-  describe("lookupUsers", () => {
-    it("@twitter", async () => {
-      const user = await Twitter.lookupUsers(["783214"]);
-      assert.equal(user.users.length, 1);
-      assert.equal(Types.isUser(user.users[0]), true);
-      assert.equal(user.users[0].id_str, "783214");
-    });
+// describe("Twitter API test (call APIs actually)", () => {
+//   describe("lookupUsers", () => {
+//     it("@twitter", async () => {
+//       const user = await Twitter.lookupUsers(["783214"]);
+//       assert.equal(user.users.length, 1);
+//       assert.equal(Types.isUser(user.users[0]), true);
+//       assert.equal(user.users[0].id_str, "783214");
+//     });
+//   });
+
+//   describe("get friends / followers", () => {
+//     it("@twitter followers", async () => {
+//       const userIds = await Twitter.getFriendsOrFollowersIds({ screenName: "twitter" }, false, 1);
+//       assert.equal(Array.isArray(userIds), true);
+//       assert.equal(userIds.length, 5000);
+//     });
+
+//     it("@twitter friends", async () => {
+//       const userIds = await Twitter.getFriendsOrFollowersIds({ screenName: "twitter" }, true, 1);
+//       assert.equal(Array.isArray(userIds), true);
+//       assert.equal(userIds.length > 0, true);
+//     });
+//   });
+
+//   describe("get tweets", () => {
+//     it("@twitter timeline", async () => {
+//       const tweets = await Twitter.getRecentTweets({ screenName: "twitter" }, "1435990839013126149");
+//       assert.ok(Types.isTweetExArray(tweets.tweets));
+//     });
+//   })
+// });
+
+describe("moment.js and day.js", () => {
+  it("test1", () => {
+    const now1 = moment().utcOffset(9);
+    const timestamp1 = now1.format();
+
+    const now2 = dayjs().utcOffset(9);
+    const timestamp2 = now2.format();
+
+    console.log(timestamp2)
+    assert.equal(timestamp1, timestamp2);
   });
 
-  describe("get friends / followers", () => {
-    it("@twitter followers", async () => {
-      const userIds = await Twitter.getFriendsOrFollowersIds({ screenName: "twitter" }, false, 1);
-      assert.equal(Array.isArray(userIds), true);
-      assert.equal(userIds.length, 5000);
-    });
-
-    it("@twitter friends", async () => {
-      const userIds = await Twitter.getFriendsOrFollowersIds({ screenName: "twitter" }, true, 1);
-      assert.equal(Array.isArray(userIds), true);
-      assert.equal(userIds.length > 0, true);
-    });
+  it("test2", () => {
+    const now1 = moment().utcOffset(9);
+    const ttl1 = +now1.format("X") + 4 * 24 * 3600;
+    const now2 = dayjs().utcOffset(9);
+    const ttl2 = now2.unix() + 4 * 24 * 3600;
+    console.log(ttl2);
+    assert.equal(ttl1, ttl2);
   });
 
-  describe("get tweets", () => {
-    it("@twitter timeline", async () => {
-      const tweets = await Twitter.getRecentTweets({ screenName: "twitter" }, "1435990839013126149");
-      assert.ok(Types.isTweetExArray(tweets.tweets));
-    });
-  })
-});
+  
+})
