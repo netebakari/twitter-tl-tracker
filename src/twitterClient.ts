@@ -273,7 +273,7 @@ export const getTweets = async (
 const alterTweet = (tweets: Types.Tweet[], serverTimestamp?: string): Types.TweetEx[] => {
   const _serverTimestamp = serverTimestamp || util.getCurrentTime();
   return tweets.map((tweet) => {
-    const timestamp = dayjs(tweet.created_at).utcOffset(env.tweetOption.utfOffset);
+    const timestamp = dayjs(tweet.created_at).utcOffset(env.tweetOption.utcOffset);
     return {
       ...tweet,
       timestampLocal: timestamp.format(),

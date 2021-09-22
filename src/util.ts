@@ -6,11 +6,11 @@ import * as env from "./env"
 import * as Types from "./types"
 
 /**
- * 現在時刻を "2021-09-22T12:34:45+0900" 形式で取得する（環境変数のutfOffsetを反映する）
+ * 現在時刻を "2021-09-22T12:34:45+0900" 形式で取得する（環境変数のutcOffsetを反映する）
  */
 export const getCurrentTime = () => {
-  // return moment().utcOffset(env.tweetOption.utfOffset).format();
-  return dayjs().utcOffset(env.tweetOption.utfOffset).format();
+  // return moment().utcOffset(env.tweetOption.utcOffset).format();
+  return dayjs().utcOffset(env.tweetOption.utcOffset).format();
 };
 
 /**
@@ -20,7 +20,7 @@ export const getCurrentTime = () => {
  * @returns 
  */
 export const getStatusId = (daysCount: number, now_?: Date) => {
-  const now = dayjs(now_).utcOffset(env.tweetOption.utfOffset);
+  const now = dayjs(now_).utcOffset(env.tweetOption.utcOffset);
   // 指定したタイムゾーンの本日0:00
   const cinderellaTime = now.add(-now.get("hour"), "hour").add(-now.get("minute"), "minute").add(-now.get("second"), "second");
   const unixTime = cinderellaTime.unix() - daysCount * 24 * 3600; // 求める日の0時0分のUnixTime

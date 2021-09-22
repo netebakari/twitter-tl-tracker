@@ -47,7 +47,7 @@ https://netebakari.s3-ap-northeast-1.amazonaws.com/twitter-timeline-tracker/clou
     <tr><th>TwitterUserId</th><td>自分のTwitterユーザーID。スクリーンネームではないので注意</td></tr>
     <tr><th>UploadedPackageBucketName</th><td>パッケージ(.zip)をアップロードしたS3のバケット名（デフォルト値でよい）</td></tr>
     <tr><th>UploadedPackageKeyName</th><td>パッケージ(.zip)のキー名（デフォルト値でよい）</td></tr>
-    <tr><th>UtfOffsetInHours</th><td>日本時間なら9</td></tr>
+    <tr><th>UtcOffsetInHours</th><td>日本時間なら9</td></tr>
   </tboby>
 </table>
 
@@ -73,7 +73,7 @@ aws cloudformation create-stack \
                    ParameterKey=TwitterUserId,ParameterValue=__YOUR_TWITTER_ID__ \
        ParameterKey=UploadedPackageBucketName,ParameterValue=netebakari \
           ParameterKey=UploadedPackageKeyName,ParameterValue=twitter-timeline-tracker/timeline-tracker-latest.zip \
-                ParameterKey=UtfOffsetInHours,ParameterValue=9
+                ParameterKey=utcOffsetInHours,ParameterValue=9
 ```
 
 ## 4. CloudWatch Eventsを調整する

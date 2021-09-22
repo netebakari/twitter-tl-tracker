@@ -43,7 +43,7 @@ const s3_region                     = getEnv("s3_region");
 const s3_bucket                     = getEnv("s3_bucket");
 const options_daysToArchive         = getEnvAsInteger("options_daysToArchive");
 const options_includeFollowers      = getEnvAsBoolean("options_includeFollowers");
-const options_utfOffset             = getEnvAsInteger("options_utfOffset");
+const options_utcOffset             = getEnvAsInteger("options_utcOffset");
 const options_myUserIdStr           = getEnv("options_myUserIdStr");
 
 export const dynamoDb = {
@@ -65,6 +65,6 @@ export const s3 = {
 export const tweetOption = {
   daysToArchive: options_daysToArchive,
   includeFollowers: options_includeFollowers,
-  utfOffset: options_utfOffset,
+  utcOffset: options_utcOffset,
   myUserIdStr: options_myUserIdStr
 };

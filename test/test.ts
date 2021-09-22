@@ -229,7 +229,7 @@ describe("util", () => {
 
   describe("getStatusId", () => {
     it("test1", () => {
-      assert.strictEqual(env.tweetOption.utfOffset, 9); // JSTになっていることを前提にテストする
+      assert.strictEqual(env.tweetOption.utcOffset, 9); // JSTになっていることを前提にテストする
       const statusId = util.getStatusId(1, new Date("2021-09-11T01:00:00+09:00"));
       assert.strictEqual(statusId, "1435981317534646000");
       // https://twitter.com/Twitter/status/1435990839013126149 2021/9/10 0:37(JST)

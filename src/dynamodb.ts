@@ -21,7 +21,7 @@ export const getTimelineRecord = async () => {
  * タイムラインのsinceIdを保存しているレコード（id_strは"TIMELINE"固定）を更新する。TTLは付けない
  */
 export const updateTImelineRecord = async (sinceId: string) => {
-  const now = dayjs().utcOffset(env.tweetOption.utfOffset);
+  const now = dayjs().utcOffset(env.tweetOption.utcOffset);
   const record: ParamTypes.UserOnDb = {
     id_str: "TIMELINE",
     name: "*My Timeline*",
@@ -63,9 +63,9 @@ export const getUserById = async (id_str: string) => {
  * ユーザーのレコードを更新する。設定されたTTLを付与する
  */
 export const putUser = async (id_str: string, screenName: string, name: string, sinceId: string) => {
-  // const now = moment().utcOffset(env.tweetOption.utfOffset);
+  // const now = moment().utcOffset(env.tweetOption.utcOffset);
   // const ttl = +now.format("X") + env.dynamoDb.ttlInDays * 24 * 3600;
-  const now = dayjs().utcOffset(env.tweetOption.utfOffset);
+  const now = dayjs().utcOffset(env.tweetOption.utcOffset);
   const ttl = now.unix() + env.dynamoDb.ttlInDays * 24 * 3600;
   const record: ParamTypes.UserOnDb = {
     id_str: id_str,
