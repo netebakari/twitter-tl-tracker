@@ -105,11 +105,17 @@ export const isTweetEx = (arg: any): arg is TweetEx => {
 };
 
 export interface TweetEx extends Tweet {
+  /**
+   * ツイートのタイムスタンプ（指定されたタイムゾーン）。ISO 8601形式
+   */
   timestampLocal: string;
   /**
-   * ツイートのタイムスタンプ（日本時間）。YYYY-MM-DD形式（タイムゾーンの情報はなくなる）
+   * ツイートのタイムスタンプ（指定されたタイムゾーン）。YYYY-MM-DD形式（タイムゾーンの情報はなくなる）
    */
   dateLocal: string;
+  /**
+   * ツイートの取得日時をISO 8601形式で（指定されたタイムゾーン）
+   */
   serverTimestamp: string;
 }
 

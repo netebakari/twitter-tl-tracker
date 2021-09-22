@@ -207,7 +207,7 @@ export const getFragments = async (date: Types.DateType) => {
 
 type SimplifiedS3Object = {
   key: string;
-  lastModified?: moment.Moment;
+  lastModified?: dayjs.Dayjs;
 };
 
 /**
@@ -223,7 +223,7 @@ export const listAllObjects = async (keyPrefix: string, bucketName?: string): Pr
   }
 
   const simplify = (obj: AWS.S3.Object): SimplifiedS3Object => {
-    return { key: obj.Key ?? "", lastModified: util.dateToMoment(obj.LastModified) };
+    return { key: obj.Key ?? "", lastModified: dayjs(obj.LastModified) };
   };
 
   const result: SimplifiedS3Object[][] = [firstChunk.Contents.map((x) => simplify(x))];
@@ -251,7 +251,7 @@ export const listAllObjects = async (keyPrefix: string, bucketName?: string): Pr
 /**
  * フォロイー・フォロワーのIDデータを保存する。タイムスタンプ付きのものと latest.json の2つを保存する
  */
-export const putFriendAndFollowerIds = async (timestamp: moment.Moment, ids: Types.FriendsAndFollowersIdsType) => {
+export const putFriendAndFollowerIds = async (timestamp: dayjs.Dayjs, ids: Types.FriendsAndFollowersIdsType) => {
   await s3
     .putObject({
       Bucket: env.s3.bucket,
