@@ -1,8 +1,8 @@
 import * as AWS from "aws-sdk";
 import * as fs from "fs";
 import * as _ from "lodash";
-import moment from "moment";
-
+import dayjs from "dayjs"
+dayjs.extend(require("dayjs/plugin/utc"))
 import * as env from "./env";
 import * as Types from "./types";
 import * as util from "./util";
@@ -18,7 +18,7 @@ const s3 = new AWS.S3({ region: env.s3.region });
 export const getTextContent = async (
   key: string | Buffer,
   bucketName?: string
-): Promise<{ body: string; timestamp?: moment.Moment } | undefined> => {
+): Promise<{ body: string; timestamp?: dayjs.Dayjs } | undefined> => {
   // テスト用
   if (Buffer.isBuffer(key)) {
     return { body: key.toString("utf-8") };
@@ -45,7 +45,7 @@ export const getTextContent = async (
 
     const timestamp = (() => {
       try {
-        return moment(data.LastModified);
+        return dayjs(data.LastModified);
       } catch (e) {
         return undefined;
       }
@@ -71,7 +71,7 @@ export async function getContent<T>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   typeGuardFunction?: (arg: any) => arg is T,
   bucketName?: string
-): Promise<{ data: T; timestamp?: moment.Moment } | undefined> {
+): Promise<{ data: T; timestamp?: dayjs.Dayjs } | undefined> {
   bucketName = bucketName ?? env.s3.bucket;
   const raw = await getTextContent(key, bucketName);
   if (!raw) {
@@ -118,11 +118,11 @@ export const getTweets = async (key: string | Buffer, bucketName?: string): Prom
   }
 };
 
-export const putArchivedTweets = async (date: moment.Moment, tweets: Types.TweetEx[], objects: string[]) => {
-  date.utcOffset(env.tweetOption.utfOffset);
-  const year = date.format("YYYY");
-  const yearMonth = date.format("YYYY-MM");
-  const yearMonthDate = date.format("YYYY-MM-DD");
+export const putArchivedTweets = async (date: Types.DateType, tweets: Types.TweetEx[], objects: string[]) => {
+  // date.utcOffset(env.tweetOption.utfOffset);
+  const year = date.year;
+  const yearMonth = `${date.year}-${date.month}`;
+  const yearMonthDate = `${date.year}-${date.month}-${date.day}`;
   const key = `archive/${year}/${yearMonth}/${yearMonthDate}.json`;
   console.log(`s3://${env.s3.bucket}/${key}を保存します`);
   const content = tweets.map((x) => JSON.stringify(x)).join("\n");
@@ -157,7 +157,8 @@ export const putArchivedTweets = async (date: moment.Moment, tweets: Types.Tweet
 export const putUserTweets = async (tweets: Types.TweetEx[]) => {
   for (const chunk of util.groupByDate(tweets)) {
     const content = chunk.tweets.map((x) => JSON.stringify(x)).join("\n");
-    const now = moment().utcOffset(env.tweetOption.utfOffset).format("YYYYMMDD.HHmmss.SSS");
+    // const now = moment().utcOffset(env.tweetOption.utfOffset).format("YYYYMMDD.HHmmss.SSS");
+    const now = dayjs().utcOffset(env.tweetOption.utfOffset).format("YYYYMMDD.HHmmss.SSS");
     const keyName = `raw/user/${chunk.date}/${now}.json`;
     console.log(`s3://${env.s3.bucket}/${keyName}を保存します`);
     await s3
@@ -179,7 +180,8 @@ export const putUserTweets = async (tweets: Types.TweetEx[]) => {
 export const putTimelineTweets = async (tweets: Types.TweetEx[]) => {
   for (const chunk of util.groupByDate(tweets)) {
     const content = chunk.tweets.map((x) => JSON.stringify(x)).join("\n");
-    const now = moment().utcOffset(env.tweetOption.utfOffset).format("YYYYMMDD.HHmmss.SSS");
+    // const now = moment().utcOffset(env.tweetOption.utfOffset).format("YYYYMMDD.HHmmss.SSS");
+    const now = dayjs().utcOffset(env.tweetOption.utfOffset).format("YYYYMMDD.HHmmss.SSS");
     const keyName = `raw/home/${chunk.date}/${now}.json`;
     console.log(`s3://${env.s3.bucket}/${keyName}を保存します`);
     await s3
@@ -197,16 +199,15 @@ export const putTimelineTweets = async (tweets: Types.TweetEx[]) => {
  * 指定した日付のツイートログの断片のキーとタイムスタンプを取得
  * @param date
  */
-export const getFragments = async (date: moment.Moment) => {
-  const dateStr = date.utcOffset(env.tweetOption.utfOffset).format("YYYY-MM-DD");
-  const userTweets = await listAllObjects(`raw/user/${dateStr}/`);
-  const homeTweets = await listAllObjects(`raw/home/${dateStr}/`);
+export const getFragments = async (date: Types.DateType) => {
+  const userTweets = await listAllObjects(`raw/user/${date.year}/${date.month}/${date.day}`);
+  const homeTweets = await listAllObjects(`raw/home/${date.year}/${date.month}/${date.day}/`);
   return { userTweets, homeTweets };
 };
 
 type SimplifiedS3Object = {
   key: string;
-  lastModified?: moment.Moment;
+  lastModified?: dayjs.Dayjs;
 };
 
 /**
@@ -222,7 +223,7 @@ export const listAllObjects = async (keyPrefix: string, bucketName?: string): Pr
   }
 
   const simplify = (obj: AWS.S3.Object): SimplifiedS3Object => {
-    return { key: obj.Key ?? "", lastModified: util.dateToMoment(obj.LastModified) };
+    return { key: obj.Key ?? "", lastModified: dayjs(obj.LastModified) };
   };
 
   const result: SimplifiedS3Object[][] = [firstChunk.Contents.map((x) => simplify(x))];
@@ -250,7 +251,7 @@ export const listAllObjects = async (keyPrefix: string, bucketName?: string): Pr
 /**
  * フォロイー・フォロワーのIDデータを保存する。タイムスタンプ付きのものと latest.json の2つを保存する
  */
-export const putFriendAndFollowerIds = async (timestamp: moment.Moment, ids: Types.FriendsAndFollowersIdsType) => {
+export const putFriendAndFollowerIds = async (timestamp: dayjs.Dayjs, ids: Types.FriendsAndFollowersIdsType) => {
   await s3
     .putObject({
       Bucket: env.s3.bucket,
@@ -316,8 +317,8 @@ export const compareSimplifiedS3ObjectByTimestamp = (obj1: SimplifiedS3Object, o
  * @param date
  * @param localPath 省略可。S3ではなくローカルに出力する際のパスを指定する。パス区切り文字で終わること
  */
-export const archive = async (date: moment.Moment, localPath?: string) => {
-  console.log(`${date.format("YYYY-MM-DD")}のログを処理します`);
+export const archive = async (date: Types.DateType, localPath?: string) => {
+  console.log(`${date.year}/${date.month}/${date.day}のログを処理します`);
   const keys = await getFragments(date);
   const allTweets: Types.TweetEx[] = [];
   const ids: string[] = [];
@@ -356,14 +357,14 @@ export const archive = async (date: moment.Moment, localPath?: string) => {
   } else {
     console.log("ソートが終わりました。ファイルに書き出します");
     {
-      const filename = `${localPath}${date.format("YYYY-MM-DD")}.json`;
+      const filename = `${localPath}${date.year}-${date.month}-${date.day}.json`;
       console.log(`${filename} を保存します`);
       const content = allTweets.map((x) => JSON.stringify(x)).join("\n");
       fs.writeFileSync(filename, Buffer.from(content, "utf-8"));
     }
 
     {
-      const filename = `${localPath}${date.format("YYYY-MM-DD")}.json`;
+      const filename = `${localPath}${date.year}-${date.month}-${date.day}.json`;
       console.log(`${filename} を保存します`);
       const content = sourceList.join("\n");
       fs.writeFileSync(filename, Buffer.from(content, "utf-8"));

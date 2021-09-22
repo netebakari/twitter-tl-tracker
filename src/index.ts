@@ -3,8 +3,9 @@
 import * as LambdaType from "aws-lambda";
 import * as AWS from "aws-sdk";
 import _ from "lodash";
-import moment from "moment";
-
+// import moment from "moment";
+import dayjs from "dayjs"
+dayjs.extend(require("dayjs/plugin/utc"))
 import * as dynamo from "./dynamodb";
 import * as env from "./env";
 import * as s3 from "./s3";
@@ -30,9 +31,16 @@ exports.archive = async (event: any, context: LambdaType.Context) => {
 
   if (typeof event.daysToBack === "number") {
     // 引数 daysToBack で指定されていたらその日数だけ戻ってログのマージを行う（0なら当日、1なら1日前など）
-    await s3.archive(moment().add(-event.daysToBack, "days"), event.destPath);
+    // await s3.archive(moment().add(-event.daysToBack, "days"), event.destPath);
+    const date = dayjs().utcOffset(env.tweetOption.utfOffset).add(-event.daysToBack, "dates");
+    const d: Types.DateType = {
+      year: date.format("YYYY") as "2000",
+      month: date.format("MM") as "01",
+      day: date.format("DD") as "01"
+    }
+    await s3.archive(d, event.destPath);
   } else {
-    // 引数がなかったら当日から設定値までを全部マージする
+    // 引数がなかったら自分自身を非同期的に実行して当日から設定値までを全部マージする
     for (let i = 0; i <= env.tweetOption.daysToArchive; i++) {
       console.log(`別にLmabdaを起動して${i}日前のログをマージします`);
       const splitted = context.invokedFunctionArn.split(":"); // arn:aws:lambda:ap-northeast-1:99999999999:function:TimelineTraker-HomeTimeline
@@ -72,7 +80,7 @@ exports.event = async (event: any, context: LambdaType.Context) => {
     const users = await twitter.lookupUsers(userIds);
   }
 
-  const now = moment().utcOffset(env.tweetOption.utfOffset);
+  // const now = moment().utcOffset(env.tweetOption.utfOffset);
   //await s3.putFriendAndFollowerIds(now, {friendsIds, followersIds});
 };
 

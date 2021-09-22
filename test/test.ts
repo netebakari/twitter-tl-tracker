@@ -1,12 +1,15 @@
-import * as assert from "assert";
-import * as fs from "fs";
-
-import * as s3 from "../src/s3";
-import * as Types from "../src/types";
-import * as ParamTypes from "../src/types/parameters";
-import * as util from "../src/util";
-import moment = require("moment");
-import * as Twitter from "../src/twitterClient";
+import * as assert from "assert"
+import * as fs from "fs"
+import * as s3 from "../src/s3"
+import * as Types from "../src/types"
+import * as ParamTypes from "../src/types/parameters"
+import * as util from "../src/util"
+// import moment = require("moment")
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
+import * as Twitter from "../src/twitterClient"
+import * as env from "../src/env"
 
 const loadJson = (filename: string): any => {
   const buffer = fs.readFileSync(`test/fixtures/${filename}`);
@@ -52,9 +55,9 @@ describe("s3", () => {
 
   describe("compareSimplifiedS3ObjectByTimestamp", () => {
     it("earlier timestamp comes top", () => {
-      const obj1 = { key: "1", lastModified: moment("2020-01-01") };
-      const obj2 = { key: "2", lastModified: moment("2020-01-02") };
-      const obj3 = { key: "3", lastModified: moment("2020-01-03") };
+      const obj1 = { key: "1", lastModified: dayjs("2020-01-01T00:00:00Z") };
+      const obj2 = { key: "2", lastModified: dayjs("2020-01-02T00:00:00Z") };
+      const obj3 = { key: "3", lastModified: dayjs("2020-01-03T00:00:00Z") };
       const arr = [obj2, obj3, obj1];
       arr.sort(s3.compareSimplifiedS3ObjectByTimestamp);
       assert.equal(arr[0].key, "1");
@@ -64,8 +67,8 @@ describe("s3", () => {
 
     it("undefined comes first", () => {
       const obj1 = { key: "1", lastModified: undefined };
-      const obj2 = { key: "2", lastModified: moment("2020-01-02") };
-      const obj3 = { key: "3", lastModified: moment("2020-01-03") };
+      const obj2 = { key: "2", lastModified: dayjs("2020-01-02T00:00:00Z") };
+      const obj3 = { key: "3", lastModified: dayjs("2020-01-03T00:00:00Z") };
       const arr = [obj2, obj3, obj1];
       arr.sort(s3.compareSimplifiedS3ObjectByTimestamp);
       assert.equal(arr[0].key, "1");
@@ -74,9 +77,9 @@ describe("s3", () => {
     });
 
     it("undefined comes first #2", () => {
-      const arr: { key: string; lastModified?: moment.Moment }[] = [];
+      const arr: { key: string; lastModified?: dayjs.Dayjs }[] = [];
       for (let i = 1; i < 30; i++) {
-        arr.push({ key: `${i}`, lastModified: moment(`2020-01-01`).add(i, "days") });
+        arr.push({ key: `${i}`, lastModified: dayjs("2020-01-01T00:00:00Z").add(i, "days") });
       }
       arr.push({ key: `X`, lastModified: undefined });
       arr.sort(s3.compareSimplifiedS3ObjectByTimestamp);
@@ -223,6 +226,15 @@ describe("util", () => {
       assert.equal(result, undefined);
     });
   });
+
+  describe("getStatusId", () => {
+    it("test1", () => {
+      assert.strictEqual(env.tweetOption.utfOffset, 9); // JSTになっていることを前提にテストする
+      const statusId = util.getStatusId(1, new Date("2021-09-11T01:00:00+09:00"));
+      assert.strictEqual(statusId, "1435981317534646000");
+      // https://twitter.com/Twitter/status/1435990839013126149 2021/9/10 0:37(JST)
+    });
+  });
 });
 
 describe("Twitter API test (call APIs actually)", () => {
@@ -253,6 +265,11 @@ describe("Twitter API test (call APIs actually)", () => {
     it("@twitter timeline", async () => {
       const tweets = await Twitter.getRecentTweets({ screenName: "twitter" }, "1435990839013126149");
       assert.ok(Types.isTweetExArray(tweets.tweets));
+      // https://twitter.com/Twitter/status/1440395414159511560
+      const found = tweets.tweets.filter(x => x.id_str === "1440395414159511560");
+      assert.strictEqual(found.length, 1);
+      assert.strictEqual(found[0].text || found[0].full_text, "well, well, well");
+      assert.strictEqual(found[0].timestampLocal, "2021-09-22T04:20:02+09:00");
     });
   })
 });

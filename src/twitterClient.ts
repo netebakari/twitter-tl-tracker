@@ -1,14 +1,15 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import * as _ from "lodash";
-import moment from "moment";
-import Twitter from "twitter-lite";
-
-import * as env from "./env";
-import * as token from "./twitterToken";
-import * as Types from "./types";
-import * as ParamTypes from "./types/parameters";
-import * as TwitterTypes from "./types/twitter";
-import * as util from "./util";
+import * as _ from "lodash"
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
+import Twitter from "twitter-lite"
+import * as env from "./env"
+import * as token from "./twitterToken"
+import * as Types from "./types"
+import * as ParamTypes from "./types/parameters"
+import * as TwitterTypes from "./types/twitter"
+import * as util from "./util"
 
 const client = new Twitter(token.twitterToken);
 
@@ -272,7 +273,7 @@ export const getTweets = async (
 const alterTweet = (tweets: Types.Tweet[], serverTimestamp?: string): Types.TweetEx[] => {
   const _serverTimestamp = serverTimestamp || util.getCurrentTime();
   return tweets.map((tweet) => {
-    const timestamp = moment(new Date(tweet.created_at)).utcOffset(env.tweetOption.utfOffset);
+    const timestamp = dayjs(tweet.created_at).utcOffset(env.tweetOption.utfOffset);
     return {
       ...tweet,
       timestampLocal: timestamp.format(),
