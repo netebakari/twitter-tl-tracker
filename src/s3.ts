@@ -199,8 +199,8 @@ export const putTimelineTweets = async (tweets: Types.TweetEx[]) => {
  * @param date
  */
 export const getFragments = async (date: Types.DateType) => {
-  const userTweets = await listAllObjects(`raw/user/${date.year}/${date.month}/${date.day}`);
-  const homeTweets = await listAllObjects(`raw/home/${date.year}/${date.month}/${date.day}/`);
+  const userTweets = await listAllObjects(`raw/user/${date.year}-${date.month}-${date.day}/`);
+  const homeTweets = await listAllObjects(`raw/home/${date.year}-${date.month}-${date.day}/`);
   return { userTweets, homeTweets };
 };
 
@@ -317,7 +317,7 @@ export const compareSimplifiedS3ObjectByTimestamp = (obj1: SimplifiedS3Object, o
  * @param localPath 省略可。S3ではなくローカルに出力する際のパスを指定する。パス区切り文字で終わること
  */
 export const archive = async (date: Types.DateType, localPath?: string) => {
-  console.log(`${date.year}/${date.month}/${date.day}のログを処理します`);
+  console.log(`${date.year}-${date.month}-${date.day}のログを処理します`);
   const keys = await getFragments(date);
   const allTweets: Types.TweetEx[] = [];
   const ids: string[] = [];
