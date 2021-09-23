@@ -43,7 +43,7 @@ Parameters:
     AllowedPattern: "true|false"
     Description: "'true' or 'false'. If true, all the tweets of your followers fetched and archived"
     Type: String
-  UtfOffsetInHours:
+  utcOffsetInHours:
     Default: 9
     Description: timezone
     Type: Number
@@ -182,7 +182,7 @@ Resources:
           s3_bucket: !Sub ${S3BucketName}
           options_daysToArchive: !Sub ${DaysToArchive}
           options_includeFollowers: !Sub ${IncludeFollowers}
-          options_utfOffset: !Sub ${UtfOffsetInHours}
+          options_utcOffset: !Sub ${utcOffsetInHours}
           options_myUserIdStr: !Sub ${TwitterUserId}
       Handler: "index.homeTimeline"
       MemorySize: 256
@@ -213,7 +213,7 @@ Resources:
           s3_bucket: !Sub ${S3BucketName}
           options_daysToArchive: !Sub ${DaysToArchive}
           options_includeFollowers: !Sub ${IncludeFollowers}
-          options_utfOffset: !Sub ${UtfOffsetInHours}
+          options_utcOffset: !Sub ${utcOffsetInHours}
           options_myUserIdStr: !Sub ${TwitterUserId}
       Handler: "index.hourlyTask"
       MemorySize: 128
@@ -244,7 +244,7 @@ Resources:
           s3_bucket: !Sub ${S3BucketName}
           options_daysToArchive: !Sub ${DaysToArchive}
           options_includeFollowers: !Sub ${IncludeFollowers}
-          options_utfOffset: !Sub ${UtfOffsetInHours}
+          options_utcOffset: !Sub ${utcOffsetInHours}
           options_myUserIdStr: !Sub ${TwitterUserId}
       Handler: "index.userTL"
       MemorySize: 320
@@ -275,7 +275,7 @@ Resources:
           s3_bucket: !Sub ${S3BucketName}
           options_daysToArchive: !Sub ${DaysToArchive}
           options_includeFollowers: !Sub ${IncludeFollowers}
-          options_utfOffset: !Sub ${UtfOffsetInHours}
+          options_utcOffset: !Sub ${utcOffsetInHours}
           options_myUserIdStr: !Sub ${TwitterUserId}
       Handler: "index.archive"
       MemorySize: 1024

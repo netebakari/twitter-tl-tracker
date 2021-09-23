@@ -1,24 +1,29 @@
-import * as _ from "lodash";
-import moment from "moment";
-
-import * as env from "./env";
-import * as Types from "./types";
+import * as _ from "lodash"
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
+import * as env from "./env"
+import * as Types from "./types"
 
 /**
- * 現在時刻を "2018-08-11T12:34:45+0900" 形式で取得する（環境変数のutfOffsetを反映する）
+ * 現在時刻を "2021-09-22T12:34:45+0900" 形式で取得する（環境変数のutcOffsetを反映する）
  */
 export const getCurrentTime = () => {
-  return moment().utcOffset(env.tweetOption.utfOffset).format();
+  // return moment().utcOffset(env.tweetOption.utcOffset).format();
+  return dayjs().utcOffset(env.tweetOption.utcOffset).format();
 };
 
 /**
- * ＊日本時間で＊ 現在日時からN日前の午前0時におけるstatus idを取得する
+ * （指定されたタイムゾーンで）現在日時からN日前の午前0時におけるstatus idを取得する
  * @param daysCount 何日遡るか。0なら当日
+ * @param now_ テスト用。基準となる現在日時
+ * @returns 
  */
-export const getStatusId = (daysCount: number) => {
-  const now = moment().utcOffset(env.tweetOption.utfOffset);
-  const cinderellaTime = moment(`${now.format("YYYY-MM-DD")}T00:00:00+09:00`); // 今日の0時0分のUnixTime
-  const unixTime = +cinderellaTime.format("X") - daysCount * 24 * 3600; // 求める日の0時0分のUnixTime
+export const getStatusId = (daysCount: number, now_?: Date) => {
+  const now = dayjs(now_).utcOffset(env.tweetOption.utcOffset);
+  // 指定したタイムゾーンの本日0:00
+  const cinderellaTime = now.add(-now.get("hour"), "hour").add(-now.get("minute"), "minute").add(-now.get("second"), "second");
+  const unixTime = cinderellaTime.unix() - daysCount * 24 * 3600; // 求める日の0時0分のUnixTime
   const time = unixTime - 1288834974.657; // マジックナンバーを引く
   // これを22ビットシフトするとstatus idの下限になる
   return Math.floor(time * 1024 * 1024 * 4) + "000";
@@ -73,12 +78,17 @@ export const groupByDate = (tweets: Types.TweetEx[]) => {
   return result;
 };
 
-export const dateToMoment = (date?: Date): moment.Moment | undefined => {
+/**
+ * Dateオブジェクトが渡されたときにだけDayjsオブジェクトを返す
+ * @param date 
+ * @returns 
+ */
+export const dateToMoment = (date?: Date): dayjs.Dayjs | undefined => {
   if (!date) {
     return undefined;
   }
   try {
-    return moment(date);
+    return dayjs(date);
   } catch (e) {
     return undefined;
   }

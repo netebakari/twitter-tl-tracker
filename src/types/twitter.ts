@@ -190,6 +190,9 @@ export interface Status {
   annotations?: any;
   contributors?: Contributors[];
   coordinates?: any;
+  /**
+   * ツイートの時刻。"Tue Feb 20 14:35:54 +0000 2007" 形式
+   */
   created_at: string;
   current_user_retweet?: {
     id: number;
