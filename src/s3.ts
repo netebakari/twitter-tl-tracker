@@ -389,7 +389,7 @@ export const archive = async (date: Types.DateType, localPath?: string) => {
 
   if (!localPath) {
     console.log("ソートが終わりました。アップロードします");
-    // await putArchivedTweets(date, allTweets, sourceList);
+    await putArchivedTweets(date, allTweets, sourceList);
   } else {
     console.log("ソートが終わりました。ファイルに書き出します");
     {

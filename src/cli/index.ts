@@ -34,10 +34,12 @@ const go = async () => {
     }
 
     case "archive": {
-      _event.destPath = process.argv[3];
-      _event.daysToBack = +process.argv[4];
+      _event.daysToBack = +process.argv[3];
       if (_event.daysToBack !== _event.daysToBack) {
         throw new Error("引数に数値を与えてください");
+      }
+      if (process.argv.length >= 5) {
+        _event.destPath = process.argv[4];
       }
       const result = await _module.archive(_event);
       console.log(_event);
