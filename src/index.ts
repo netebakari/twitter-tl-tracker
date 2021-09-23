@@ -32,7 +32,7 @@ exports.archive = async (event: any, context: LambdaType.Context) => {
   if (typeof event.daysToBack === "number") {
     // 引数 daysToBack で指定されていたらその日数だけ戻ってログのマージを行う（0なら当日、1なら1日前など）
     // await s3.archive(moment().add(-event.daysToBack, "days"), event.destPath);
-    const date = dayjs().utcOffset(env.tweetOption.utcOffset).add(-event.daysToBack, "dates");
+    const date = dayjs().utcOffset(env.tweetOption.utcOffset).add(-event.daysToBack, "days");
     const d: Types.DateType = {
       year: date.format("YYYY") as "2000",
       month: date.format("MM") as "01",
