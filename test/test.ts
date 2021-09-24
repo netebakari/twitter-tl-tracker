@@ -214,6 +214,28 @@ describe("type guards", () => {
   });
 });
 
+describe("manipulatingTweets", () => {
+  describe("Retweet", () => {
+    it("test1", () => {
+      // リツイート https://twitter.com/Twitter/status/1422576962455973890
+      const tweet = loadJson("retweet.json");
+      assert.ok(Types.isTweetEx(tweet));
+      const fullText = Twitter.normalizeRetweet(tweet);
+      assert.strictEqual(fullText, "RT @TatianaKing: Twitter engineers looking at the most Fleet traffic they've seen in months https://twitter.com/TatianaKing/status/1422415428979134464/photo/1");
+    })
+  })
+
+  describe("quotedTweet", () => {
+    it("test1", () => {
+      // 引用ツイート https://twitter.com/Twitter/status/1422609438557491205
+      const tweet = loadJson("quoted_tweet.json");
+      assert.ok(Types.isTweetEx(tweet));
+      const fullText = Twitter.normalizeRetweet(tweet);
+      assert.strictEqual(fullText, "if you see a Fleet no you didn't QT @Twitter: we're removing Fleets on August 3, working on some new stuff we're sorry or you're welcome");
+    })
+  })
+});
+
 describe("util", () => {
   describe("", () => {
     it("test1", () => {
@@ -237,39 +259,39 @@ describe("util", () => {
   });
 });
 
-describe("Twitter API test (call APIs actually)", () => {
-  describe("lookupUsers", () => {
-    it("@twitter", async () => {
-      const user = await Twitter.lookupUsers(["783214"]);
-      assert.equal(user.users.length, 1);
-      assert.equal(Types.isUser(user.users[0]), true);
-      assert.equal(user.users[0].id_str, "783214");
-    });
-  });
+// describe("Twitter API test (call APIs actually)", () => {
+//   describe("lookupUsers", () => {
+//     it("@twitter", async () => {
+//       const user = await Twitter.lookupUsers(["783214"]);
+//       assert.equal(user.users.length, 1);
+//       assert.equal(Types.isUser(user.users[0]), true);
+//       assert.equal(user.users[0].id_str, "783214");
+//     });
+//   });
 
-  describe("get friends / followers", () => {
-    it("@twitter followers", async () => {
-      const userIds = await Twitter.getFriendsOrFollowersIds({ screenName: "twitter" }, false, 1);
-      assert.equal(Array.isArray(userIds), true);
-      assert.equal(userIds.length, 5000);
-    });
+//   describe("get friends / followers", () => {
+//     it("@twitter followers", async () => {
+//       const userIds = await Twitter.getFriendsOrFollowersIds({ screenName: "twitter" }, false, 1);
+//       assert.equal(Array.isArray(userIds), true);
+//       assert.equal(userIds.length, 5000);
+//     });
 
-    it("@twitter friends", async () => {
-      const userIds = await Twitter.getFriendsOrFollowersIds({ screenName: "twitter" }, true, 1);
-      assert.equal(Array.isArray(userIds), true);
-      assert.equal(userIds.length > 0, true);
-    });
-  });
+//     it("@twitter friends", async () => {
+//       const userIds = await Twitter.getFriendsOrFollowersIds({ screenName: "twitter" }, true, 1);
+//       assert.equal(Array.isArray(userIds), true);
+//       assert.equal(userIds.length > 0, true);
+//     });
+//   });
 
-  describe("get tweets", () => {
-    it("@twitter timeline", async () => {
-      const tweets = await Twitter.getRecentTweets({ screenName: "twitter" }, "1435990839013126149");
-      assert.ok(Types.isTweetExArray(tweets.tweets));
-      // https://twitter.com/Twitter/status/1440395414159511560
-      const found = tweets.tweets.filter(x => x.id_str === "1440395414159511560");
-      assert.strictEqual(found.length, 1);
-      assert.strictEqual(found[0].text || found[0].full_text, "well, well, well");
-      assert.strictEqual(found[0].timestampLocal, "2021-09-22T04:20:02+09:00");
-    });
-  })
-});
+//   describe("get tweets", () => {
+//     it("@twitter timeline", async () => {
+//       const tweets = await Twitter.getRecentTweets({ screenName: "twitter" }, "1435990839013126149");
+//       assert.ok(Types.isTweetExArray(tweets.tweets));
+//       // https://twitter.com/Twitter/status/1440395414159511560
+//       const found = tweets.tweets.filter(x => x.id_str === "1440395414159511560");
+//       assert.strictEqual(found.length, 1);
+//       assert.strictEqual(found[0].text || found[0].full_text, "well, well, well");
+//       assert.strictEqual(found[0].timestampLocal, "2021-09-22T04:20:02+09:00");
+//     });
+//   })
+// });

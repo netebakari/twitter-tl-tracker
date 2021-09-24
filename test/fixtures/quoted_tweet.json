@@ -1,0 +1,211 @@
+{
+    "created_at": "Tue Aug 03 17:24:55 +0000 2021",
+    "id": 1422609438557491200,
+    "id_str": "1422609438557491205",
+    "full_text": "if you see a Fleet no you didn't https://t.co/4rKI7f45PL",
+    "truncated": false,
+    "display_text_range": [
+      0,
+      32
+    ],
+    "entities": {
+      "hashtags": [],
+      "symbols": [],
+      "user_mentions": [],
+      "urls": [
+        {
+          "url": "https://t.co/4rKI7f45PL",
+          "expanded_url": "https://twitter.com/Twitter/status/1415362679095635970",
+          "display_url": "twitter.com/Twitter/status…",
+          "indices": [
+            33,
+            56
+          ]
+        }
+      ]
+    },
+    "source": "<a href=\"https://www.sprinklr.com\" rel=\"nofollow\">Sprinklr</a>",
+    "in_reply_to_status_id": null,
+    "in_reply_to_status_id_str": null,
+    "in_reply_to_user_id": null,
+    "in_reply_to_user_id_str": null,
+    "in_reply_to_screen_name": null,
+    "user": {
+      "id": 783214,
+      "id_str": "783214",
+      "name": "Twitter",
+      "screen_name": "Twitter",
+      "location": "everywhere",
+      "description": "what’s happening?!",
+      "url": "https://t.co/DAtOo6uuHk",
+      "entities": {
+        "url": {
+          "urls": [
+            {
+              "url": "https://t.co/DAtOo6uuHk",
+              "expanded_url": "https://about.twitter.com/",
+              "display_url": "about.twitter.com",
+              "indices": [
+                0,
+                23
+              ]
+            }
+          ]
+        },
+        "description": {
+          "urls": []
+        }
+      },
+      "protected": false,
+      "followers_count": 59588080,
+      "friends_count": 10,
+      "listed_count": 87317,
+      "created_at": "Tue Feb 20 14:35:54 +0000 2007",
+      "favourites_count": 6288,
+      "utc_offset": null,
+      "time_zone": null,
+      "geo_enabled": true,
+      "verified": true,
+      "statuses_count": 14776,
+      "lang": null,
+      "contributors_enabled": false,
+      "is_translator": false,
+      "is_translation_enabled": false,
+      "profile_background_color": "ACDED6",
+      "profile_background_image_url": "http://abs.twimg.com/images/themes/theme18/bg.gif",
+      "profile_background_image_url_https": "https://abs.twimg.com/images/themes/theme18/bg.gif",
+      "profile_background_tile": true,
+      "profile_image_url": "http://pbs.twimg.com/profile_images/1354479643882004483/Btnfm47p_normal.jpg",
+      "profile_image_url_https": "https://pbs.twimg.com/profile_images/1354479643882004483/Btnfm47p_normal.jpg",
+      "profile_banner_url": "https://pbs.twimg.com/profile_banners/783214/1628709359",
+      "profile_link_color": "1B95E0",
+      "profile_sidebar_border_color": "FFFFFF",
+      "profile_sidebar_fill_color": "F6F6F6",
+      "profile_text_color": "333333",
+      "profile_use_background_image": true,
+      "has_extended_profile": true,
+      "default_profile": false,
+      "default_profile_image": false,
+      "following": false,
+      "follow_request_sent": false,
+      "notifications": false,
+      "translator_type": "regular",
+      "withheld_in_countries": []
+    },
+    "geo": null,
+    "coordinates": null,
+    "place": null,
+    "contributors": null,
+    "is_quote_status": true,
+    "quoted_status_id": 1415362679095636000,
+    "quoted_status_id_str": "1415362679095635970",
+    "quoted_status_permalink": {
+      "url": "https://t.co/4rKI7f45PL",
+      "expanded": "https://twitter.com/Twitter/status/1415362679095635970",
+      "display": "twitter.com/Twitter/status…"
+    },
+    "quoted_status": {
+      "created_at": "Wed Jul 14 17:28:53 +0000 2021",
+      "id": 1415362679095636000,
+      "id_str": "1415362679095635970",
+      "full_text": "we're removing Fleets on August 3, working on some new stuff\n\nwe're sorry or you're welcome",
+      "truncated": false,
+      "display_text_range": [
+        0,
+        91
+      ],
+      "entities": {
+        "hashtags": [],
+        "symbols": [],
+        "user_mentions": [],
+        "urls": []
+      },
+      "source": "<a href=\"https://www.sprinklr.com\" rel=\"nofollow\">Sprinklr</a>",
+      "in_reply_to_status_id": null,
+      "in_reply_to_status_id_str": null,
+      "in_reply_to_user_id": null,
+      "in_reply_to_user_id_str": null,
+      "in_reply_to_screen_name": null,
+      "user": {
+        "id": 783214,
+        "id_str": "783214",
+        "name": "Twitter",
+        "screen_name": "Twitter",
+        "location": "everywhere",
+        "description": "what’s happening?!",
+        "url": "https://t.co/DAtOo6uuHk",
+        "entities": {
+          "url": {
+            "urls": [
+              {
+                "url": "https://t.co/DAtOo6uuHk",
+                "expanded_url": "https://about.twitter.com/",
+                "display_url": "about.twitter.com",
+                "indices": [
+                  0,
+                  23
+                ]
+              }
+            ]
+          },
+          "description": {
+            "urls": []
+          }
+        },
+        "protected": false,
+        "followers_count": 59588080,
+        "friends_count": 10,
+        "listed_count": 87317,
+        "created_at": "Tue Feb 20 14:35:54 +0000 2007",
+        "favourites_count": 6288,
+        "utc_offset": null,
+        "time_zone": null,
+        "geo_enabled": true,
+        "verified": true,
+        "statuses_count": 14776,
+        "lang": null,
+        "contributors_enabled": false,
+        "is_translator": false,
+        "is_translation_enabled": false,
+        "profile_background_color": "ACDED6",
+        "profile_background_image_url": "http://abs.twimg.com/images/themes/theme18/bg.gif",
+        "profile_background_image_url_https": "https://abs.twimg.com/images/themes/theme18/bg.gif",
+        "profile_background_tile": true,
+        "profile_image_url": "http://pbs.twimg.com/profile_images/1354479643882004483/Btnfm47p_normal.jpg",
+        "profile_image_url_https": "https://pbs.twimg.com/profile_images/1354479643882004483/Btnfm47p_normal.jpg",
+        "profile_banner_url": "https://pbs.twimg.com/profile_banners/783214/1628709359",
+        "profile_link_color": "1B95E0",
+        "profile_sidebar_border_color": "FFFFFF",
+        "profile_sidebar_fill_color": "F6F6F6",
+        "profile_text_color": "333333",
+        "profile_use_background_image": true,
+        "has_extended_profile": true,
+        "default_profile": false,
+        "default_profile_image": false,
+        "following": false,
+        "follow_request_sent": false,
+        "notifications": false,
+        "translator_type": "regular",
+        "withheld_in_countries": []
+      },
+      "geo": null,
+      "coordinates": null,
+      "place": null,
+      "contributors": null,
+      "is_quote_status": false,
+      "retweet_count": 79541,
+      "favorite_count": 512813,
+      "favorited": false,
+      "retweeted": false,
+      "lang": "en"
+    },
+    "retweet_count": 13585,
+    "favorite_count": 80384,
+    "favorited": false,
+    "retweeted": false,
+    "possibly_sensitive": false,
+    "lang": "en",
+    "timestampLocal": "2021-08-04T02:24:55+09:00",
+    "dateLocal": "2021-08-04",
+    "serverTimestamp": "2021-09-24T23:40:09+09:00"
+}

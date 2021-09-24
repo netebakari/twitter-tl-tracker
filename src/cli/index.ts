@@ -40,6 +40,11 @@ const go = async () => {
       break;
     }
 
+    case "status": {
+      const tweets = await client.getRecentTweets({screenName: process.argv[3]}, process.argv[4]);
+      console.log(JSON.stringify(tweets, null, 2));
+    }
+
     default: {
       console.log("task: user, home, snapshot, hourly, archive");
       break;

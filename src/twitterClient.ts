@@ -294,15 +294,23 @@ export const toTsv = (tweet: Types.TweetEx): string => {
 }
 
 export const normalizeRetweet = (tweet: Types.Tweet): string => {
-  // RTでなければそのまま返す
-  if (tweet.retweeted_status === undefined) {
-    return expandShortUrls(tweet);
+  // RTならRTされたツイートの方で処理を行う
+  if (tweet.retweeted_status) {
+    const fullText = normalizeRetweet(tweet.retweeted_status);
+    // 先頭に「RT @someone: 」を追加して返す
+    return `RT @${tweet.retweeted_status.user.screen_name}: ${fullText}`;
   }
 
-  // RTならRTされたツイートの方で同じ処理を行う
-  const fullText = expandShortUrls(tweet.retweeted_status); //`RT @${tweet.retweeted_status.user.screen_name}: ${tweet.retweeted_status.full_text ?? ""}`;
-  // 先頭に「RT @someone: 」を追加して返す
-  return `RT ${tweet.retweeted_status.user.screen_name}: ${fullText}`;
+  // QTなら末尾に「QT @someone: ...」を追加して返す
+  if (tweet.quoted_status && tweet.quoted_status_permalink) {
+    const quotedFullText = normalizeRetweet(tweet.quoted_status);
+    let fullText = expandShortUrls(tweet);
+    fullText = fullText.replace(tweet.quoted_status_permalink.expanded, "").trimEnd();
+    return  `${fullText} QT @${tweet.quoted_status.user.screen_name}: ${quotedFullText}`;
+  }
+
+  // 通常のツイートなら普通に返す
+  return expandShortUrls(tweet);
 }
 
 /**
@@ -311,14 +319,19 @@ export const normalizeRetweet = (tweet: Types.Tweet): string => {
  * @returns 
  */
 export const expandShortUrls = (tweet: Types.Tweet): string => {
-  let result = tweet.full_text ?? ""; 
-  tweet.entities.urls.forEach(x => {
-    result = result.replace(x.url, x.expanded_url);
-  })
-  tweet.entities.media.forEach(x => {
-    result = result.replace(x.url, x.expanded_url);
-  });
-  return result;
+  let result = tweet.full_text ?? "";
+  if (Array.isArray(tweet.entities.urls) && tweet.entities.urls.length > 0) {
+    tweet.entities.urls.forEach(x => {
+      result = result.replace(x.url, x.expanded_url);
+    });
+  }
+  if (Array.isArray(tweet.entities.media) && tweet.entities.media.length > 0) {
+      tweet.entities.media.forEach(x => {
+      result = result.replace(x.url, x.expanded_url);
+    });
+  }
+  
+  return result.replace(/[\r\n\t]+/g, " ");
 }
 
 /**

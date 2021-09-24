@@ -1,0 +1,370 @@
+{
+    "created_at": "Tue Aug 03 15:15:52 +0000 2021",
+    "id": 1422576962455974000,
+    "id_str": "1422576962455973890",
+    "full_text": "RT @TatianaKing: Twitter engineers looking at the most Fleet traffic they've seen in months https://t.co/RZBeceHM7Z",
+    "truncated": false,
+    "display_text_range": [
+      0,
+      115
+    ],
+    "entities": {
+      "hashtags": [],
+      "symbols": [],
+      "user_mentions": [
+        {
+          "screen_name": "TatianaKing",
+          "name": "T'Challa Bread",
+          "id": 14275624,
+          "id_str": "14275624",
+          "indices": [
+            3,
+            15
+          ]
+        }
+      ],
+      "urls": [],
+      "media": [
+        {
+          "id": 1422415426336723000,
+          "id_str": "1422415426336722944",
+          "indices": [
+            92,
+            115
+          ],
+          "media_url": "http://pbs.twimg.com/media/E71vS0HWEAAXLKs.jpg",
+          "media_url_https": "https://pbs.twimg.com/media/E71vS0HWEAAXLKs.jpg",
+          "url": "https://t.co/RZBeceHM7Z",
+          "display_url": "pic.twitter.com/RZBeceHM7Z",
+          "expanded_url": "https://twitter.com/TatianaKing/status/1422415428979134464/photo/1",
+          "type": "photo",
+          "sizes": {
+            "thumb": {
+              "w": 150,
+              "h": 150,
+              "resize": "crop"
+            },
+            "medium": {
+              "w": 750,
+              "h": 1016,
+              "resize": "fit"
+            },
+            "small": {
+              "w": 502,
+              "h": 680,
+              "resize": "fit"
+            },
+            "large": {
+              "w": 750,
+              "h": 1016,
+              "resize": "fit"
+            }
+          },
+          "source_status_id": 1422415428979134500,
+          "source_status_id_str": "1422415428979134464",
+          "source_user_id": 14275624,
+          "source_user_id_str": "14275624"
+        }
+      ]
+    },
+    "extended_entities": {
+      "media": [
+        {
+          "id": 1422415426336723000,
+          "id_str": "1422415426336722944",
+          "indices": [
+            92,
+            115
+          ],
+          "media_url": "http://pbs.twimg.com/media/E71vS0HWEAAXLKs.jpg",
+          "media_url_https": "https://pbs.twimg.com/media/E71vS0HWEAAXLKs.jpg",
+          "url": "https://t.co/RZBeceHM7Z",
+          "display_url": "pic.twitter.com/RZBeceHM7Z",
+          "expanded_url": "https://twitter.com/TatianaKing/status/1422415428979134464/photo/1",
+          "type": "photo",
+          "sizes": {
+            "thumb": {
+              "w": 150,
+              "h": 150,
+              "resize": "crop"
+            },
+            "medium": {
+              "w": 750,
+              "h": 1016,
+              "resize": "fit"
+            },
+            "small": {
+              "w": 502,
+              "h": 680,
+              "resize": "fit"
+            },
+            "large": {
+              "w": 750,
+              "h": 1016,
+              "resize": "fit"
+            }
+          },
+          "source_status_id": 1422415428979134500,
+          "source_status_id_str": "1422415428979134464",
+          "source_user_id": 14275624,
+          "source_user_id_str": "14275624"
+        }
+      ]
+    },
+    "source": "<a href=\"https://mobile.twitter.com\" rel=\"nofollow\">Twitter Web App</a>",
+    "in_reply_to_status_id": null,
+    "in_reply_to_status_id_str": null,
+    "in_reply_to_user_id": null,
+    "in_reply_to_user_id_str": null,
+    "in_reply_to_screen_name": null,
+    "user": {
+      "id": 783214,
+      "id_str": "783214",
+      "name": "Twitter",
+      "screen_name": "Twitter",
+      "location": "everywhere",
+      "description": "what’s happening?!",
+      "url": "https://t.co/DAtOo6uuHk",
+      "entities": {
+        "url": {
+          "urls": [
+            {
+              "url": "https://t.co/DAtOo6uuHk",
+              "expanded_url": "https://about.twitter.com/",
+              "display_url": "about.twitter.com",
+              "indices": [
+                0,
+                23
+              ]
+            }
+          ]
+        },
+        "description": {
+          "urls": []
+        }
+      },
+      "protected": false,
+      "followers_count": 59588058,
+      "friends_count": 10,
+      "listed_count": 87319,
+      "created_at": "Tue Feb 20 14:35:54 +0000 2007",
+      "favourites_count": 6288,
+      "utc_offset": null,
+      "time_zone": null,
+      "geo_enabled": true,
+      "verified": true,
+      "statuses_count": 14776,
+      "lang": null,
+      "contributors_enabled": false,
+      "is_translator": false,
+      "is_translation_enabled": false,
+      "profile_background_color": "ACDED6",
+      "profile_background_image_url": "http://abs.twimg.com/images/themes/theme18/bg.gif",
+      "profile_background_image_url_https": "https://abs.twimg.com/images/themes/theme18/bg.gif",
+      "profile_background_tile": true,
+      "profile_image_url": "http://pbs.twimg.com/profile_images/1354479643882004483/Btnfm47p_normal.jpg",
+      "profile_image_url_https": "https://pbs.twimg.com/profile_images/1354479643882004483/Btnfm47p_normal.jpg",
+      "profile_banner_url": "https://pbs.twimg.com/profile_banners/783214/1628709359",
+      "profile_link_color": "1B95E0",
+      "profile_sidebar_border_color": "FFFFFF",
+      "profile_sidebar_fill_color": "F6F6F6",
+      "profile_text_color": "333333",
+      "profile_use_background_image": true,
+      "has_extended_profile": true,
+      "default_profile": false,
+      "default_profile_image": false,
+      "following": false,
+      "follow_request_sent": false,
+      "notifications": false,
+      "translator_type": "regular",
+      "withheld_in_countries": []
+    },
+    "geo": null,
+    "coordinates": null,
+    "place": null,
+    "contributors": null,
+    "retweeted_status": {
+      "created_at": "Tue Aug 03 04:34:00 +0000 2021",
+      "id": 1422415428979134500,
+      "id_str": "1422415428979134464",
+      "full_text": "Twitter engineers looking at the most Fleet traffic they've seen in months https://t.co/RZBeceHM7Z",
+      "truncated": false,
+      "display_text_range": [
+        0,
+        74
+      ],
+      "entities": {
+        "hashtags": [],
+        "symbols": [],
+        "user_mentions": [],
+        "urls": [],
+        "media": [
+          {
+            "id": 1422415426336723000,
+            "id_str": "1422415426336722944",
+            "indices": [
+              75,
+              98
+            ],
+            "media_url": "http://pbs.twimg.com/media/E71vS0HWEAAXLKs.jpg",
+            "media_url_https": "https://pbs.twimg.com/media/E71vS0HWEAAXLKs.jpg",
+            "url": "https://t.co/RZBeceHM7Z",
+            "display_url": "pic.twitter.com/RZBeceHM7Z",
+            "expanded_url": "https://twitter.com/TatianaKing/status/1422415428979134464/photo/1",
+            "type": "photo",
+            "sizes": {
+              "thumb": {
+                "w": 150,
+                "h": 150,
+                "resize": "crop"
+              },
+              "medium": {
+                "w": 750,
+                "h": 1016,
+                "resize": "fit"
+              },
+              "small": {
+                "w": 502,
+                "h": 680,
+                "resize": "fit"
+              },
+              "large": {
+                "w": 750,
+                "h": 1016,
+                "resize": "fit"
+              }
+            }
+          }
+        ]
+      },
+      "extended_entities": {
+        "media": [
+          {
+            "id": 1422415426336723000,
+            "id_str": "1422415426336722944",
+            "indices": [
+              75,
+              98
+            ],
+            "media_url": "http://pbs.twimg.com/media/E71vS0HWEAAXLKs.jpg",
+            "media_url_https": "https://pbs.twimg.com/media/E71vS0HWEAAXLKs.jpg",
+            "url": "https://t.co/RZBeceHM7Z",
+            "display_url": "pic.twitter.com/RZBeceHM7Z",
+            "expanded_url": "https://twitter.com/TatianaKing/status/1422415428979134464/photo/1",
+            "type": "photo",
+            "sizes": {
+              "thumb": {
+                "w": 150,
+                "h": 150,
+                "resize": "crop"
+              },
+              "medium": {
+                "w": 750,
+                "h": 1016,
+                "resize": "fit"
+              },
+              "small": {
+                "w": 502,
+                "h": 680,
+                "resize": "fit"
+              },
+              "large": {
+                "w": 750,
+                "h": 1016,
+                "resize": "fit"
+              }
+            }
+          }
+        ]
+      },
+      "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
+      "in_reply_to_status_id": null,
+      "in_reply_to_status_id_str": null,
+      "in_reply_to_user_id": null,
+      "in_reply_to_user_id_str": null,
+      "in_reply_to_screen_name": null,
+      "user": {
+        "id": 14275624,
+        "id_str": "14275624",
+        "name": "T'Challa Bread",
+        "screen_name": "TatianaKing",
+        "location": "New York, NY",
+        "description": "GrandDuchessOfTech™. Writer. Owner @ForAllNerds. Work: @mic @techwelike @marvel @strongblacklead @netflix @essence @sxsw. @HowardU Made. tatiana@forallnerds.com",
+        "url": "https://t.co/2LfC5Ztoal",
+        "entities": {
+          "url": {
+            "urls": [
+              {
+                "url": "https://t.co/2LfC5Ztoal",
+                "expanded_url": "https://linktr.ee/tatianaking/",
+                "display_url": "linktr.ee/tatianaking/",
+                "indices": [
+                  0,
+                  23
+                ]
+              }
+            ]
+          },
+          "description": {
+            "urls": []
+          }
+        },
+        "protected": false,
+        "followers_count": 16282,
+        "friends_count": 3765,
+        "listed_count": 437,
+        "created_at": "Tue Apr 01 15:40:13 +0000 2008",
+        "favourites_count": 85051,
+        "utc_offset": null,
+        "time_zone": null,
+        "geo_enabled": true,
+        "verified": false,
+        "statuses_count": 142368,
+        "lang": null,
+        "contributors_enabled": false,
+        "is_translator": false,
+        "is_translation_enabled": false,
+        "profile_background_color": "5EAA7D",
+        "profile_background_image_url": "http://abs.twimg.com/images/themes/theme1/bg.png",
+        "profile_background_image_url_https": "https://abs.twimg.com/images/themes/theme1/bg.png",
+        "profile_background_tile": true,
+        "profile_image_url": "http://pbs.twimg.com/profile_images/1410435372195237889/govfdDGu_normal.jpg",
+        "profile_image_url_https": "https://pbs.twimg.com/profile_images/1410435372195237889/govfdDGu_normal.jpg",
+        "profile_banner_url": "https://pbs.twimg.com/profile_banners/14275624/1631550890",
+        "profile_link_color": "0B5C61",
+        "profile_sidebar_border_color": "FFFFFF",
+        "profile_sidebar_fill_color": "E868D3",
+        "profile_text_color": "000000",
+        "profile_use_background_image": true,
+        "has_extended_profile": true,
+        "default_profile": false,
+        "default_profile_image": false,
+        "following": false,
+        "follow_request_sent": false,
+        "notifications": false,
+        "translator_type": "regular",
+        "withheld_in_countries": []
+      },
+      "geo": null,
+      "coordinates": null,
+      "place": null,
+      "contributors": null,
+      "is_quote_status": false,
+      "retweet_count": 9909,
+      "favorite_count": 75483,
+      "favorited": false,
+      "retweeted": false,
+      "possibly_sensitive": false,
+      "lang": "en"
+    },
+    "is_quote_status": false,
+    "retweet_count": 9909,
+    "favorite_count": 0,
+    "favorited": false,
+    "retweeted": false,
+    "possibly_sensitive": false,
+    "lang": "en",
+    "timestampLocal": "2021-08-04T00:15:52+09:00",
+    "dateLocal": "2021-08-04",
+    "serverTimestamp": "2021-09-25T00:28:29+09:00"
+}
