@@ -221,6 +221,36 @@ export const getFragments = async (date: Types.DateType) => {
   return { userTweets, homeTweets };
 };
 
+/**
+ * 既に作成済みのアーカイブデータを取得して返す
+ * @param date 日付
+ * @returns 
+ */
+export const getArchive = async (date: Types.DateType): Promise<{ filenames: string[], tweets: Types.TweetEx[] } | undefined> => {
+  // archive/2021/2021-09/2021-09-23 みたいな文字列
+  const basename = `archive/${date.year}/${date.year}-${date.month}/${date.year}-${date.month}-${date.day}`;
+
+  // アーカイブファイルで使ったファイルの一覧を書いたテキストファイルを取得してみる
+  const fileList = await getTextContent(`${basename}.txt`);
+
+  // 見つからなければこの日のアーカイブは初回
+  if (fileList === undefined) {
+    return undefined;
+  }
+
+  try {
+    const tweets = await getTweets(`${basename}.json`);
+    return {
+      filenames: fileList.body.split("\n"),
+      tweets: tweets
+    };
+  } catch(e) {
+    // テキストファイルがあるんだからJSONの方もあるはずだけど、もし見つからない/JSONLとしてパースに失敗したらこのファイルの存在は無視する
+    console.error(e);
+    return undefined;
+  }
+}
+
 type SimplifiedS3Object = {
   key: string;
   lastModified?: dayjs.Dayjs;
@@ -353,12 +383,16 @@ export const compareSimplifiedS3ObjectByTimestamp = (
  */
 export const archive = async (date: Types.DateType, localPath?: string) => {
   console.log(`${date.year}-${date.month}-${date.day}のログを処理します`);
+  const archive = await getArchive(date) || {filenames: [], tweets: []}
+  console.log(`前回の処理で${archive.filenames.length}個のファイル、${archive.tweets.length}件のツイートを処理しています`);
+
   const keys = await getFragments(date);
-  const allTweets: Types.TweetEx[] = [];
+  const allTweets: Types.TweetEx[] = archive.tweets;
   const ids: string[] = [];
-  console.log(
-    `ホームTLが${keys.homeTweets.length}件、ユーザーTLが${keys.userTweets.length}件見つかりました`
-  );
+  console.log(`ホームTLのファイルが${keys.homeTweets.length}個、ユーザーTLのファイルが${keys.userTweets.length}個見つかりました`);
+  keys.homeTweets = keys.homeTweets.filter(x => archive.filenames.indexOf(x.key) === -1);
+  keys.userTweets = keys.userTweets.filter(x => archive.filenames.indexOf(x.key) === -1);
+  console.log(`既に処理済みのファイルを除外したところ、ホームTLのファイルが${keys.homeTweets.length}個、ユーザーTLのファイルが${keys.userTweets.length}個になりました`);
   console.log("ホームTLのマージを行います");
   for (const item of keys.homeTweets) {
     const tweets = await getTweets(item.key);
@@ -382,10 +416,7 @@ export const archive = async (date: Types.DateType, localPath?: string) => {
   }
 
   // ソースとなったオブジェクトのリスト
-  const sourceList = [
-    ...keys.homeTweets.map((x) => x.key),
-    ...keys.userTweets.map((x) => x.key),
-  ];
+  const sourceList = [...archive.filenames, ...keys.homeTweets.map((x) => x.key), ...keys.userTweets.map((x) => x.key)];
 
   console.log("マージが終わりました。ソートします");
   allTweets.sort((a, b) => util.compareNumber(a.id_str, b.id_str));
@@ -403,7 +434,7 @@ export const archive = async (date: Types.DateType, localPath?: string) => {
     }
 
     {
-      const filename = `${localPath}${date.year}-${date.month}-${date.day}.json`;
+      const filename = `${localPath}${date.year}-${date.month}-${date.day}.txt`;
       console.log(`${filename} を保存します`);
       const content = sourceList.join("\n");
       fs.writeFileSync(filename, Buffer.from(content, "utf-8"));
