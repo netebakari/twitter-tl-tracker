@@ -283,6 +283,44 @@ const alterTweet = (tweets: Types.Tweet[], serverTimestamp?: string): Types.Twee
   });
 };
 
+export const toTsv = (tweet: Types.TweetEx): string => {
+  return [
+    dayjs(tweet.timestampLocal).format("YYYY-MM-DD HH:mm:ss"),
+    tweet.id_str,
+    "@" + tweet.user.screen_name,
+    tweet.user.name?.replace(/[\r\n\t]+/g, " "),
+    normalizeRetweet(tweet).replace(/[\r\n\t]+/g, " ")
+  ].join("\t");
+}
+
+export const normalizeRetweet = (tweet: Types.Tweet): string => {
+  // RTでなければそのまま返す
+  if (tweet.retweeted_status === undefined) {
+    return expandShortUrls(tweet);
+  }
+
+  // RTならRTされたツイートの方で同じ処理を行う
+  const fullText = expandShortUrls(tweet.retweeted_status); //`RT @${tweet.retweeted_status.user.screen_name}: ${tweet.retweeted_status.full_text ?? ""}`;
+  // 先頭に「RT @someone: 」を追加して返す
+  return `RT ${tweet.retweeted_status.user.screen_name}: ${fullText}`;
+}
+
+/**
+ * t.coで短縮されたURLを元に戻す
+ * @param tweet 
+ * @returns 
+ */
+export const expandShortUrls = (tweet: Types.Tweet): string => {
+  let result = tweet.full_text ?? ""; 
+  tweet.entities.urls.forEach(x => {
+    result = result.replace(x.url, x.expanded_url);
+  })
+  tweet.entities.media.forEach(x => {
+    result = result.replace(x.url, x.expanded_url);
+  });
+  return result;
+}
+
 /**
  * ツイートを送信する。インスタンス生成時に dryRun = true を指定していたら console.log で出力するだけ
  * @param text
