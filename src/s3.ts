@@ -1,8 +1,8 @@
 import * as AWS from "aws-sdk";
 import * as fs from "fs";
 import * as _ from "lodash";
-import dayjs from "dayjs"
-dayjs.extend(require("dayjs/plugin/utc"))
+import dayjs from "dayjs";
+dayjs.extend(require("dayjs/plugin/utc"));
 import * as env from "./env";
 import * as Types from "./types";
 import * as util from "./util";
@@ -90,7 +90,9 @@ export async function getContent<T>(
     if (typeGuardFunction(data)) {
       return { data: data, timestamp: raw.timestamp };
     } else {
-      console.error(`s3://${bucketName}/${key} did'nt satisfy provided type guard function`);
+      console.error(
+        `s3://${bucketName}/${key} did'nt satisfy provided type guard function`
+      );
       return undefined;
     }
   } else {
@@ -104,7 +106,10 @@ export async function getContent<T>(
  * @param key S3オブジェクトのキー。Bufferを与えたときはUTF-8でエンコードした文字列をS3から取得したとみなす（テスト用）
  * @param bucketName テスト用。省略時は環境変数で指定したバケットが利用される
  */
-export const getTweets = async (key: string | Buffer, bucketName?: string): Promise<Types.TweetEx[]> => {
+export const getTweets = async (
+  key: string | Buffer,
+  bucketName?: string
+): Promise<Types.TweetEx[]> => {
   bucketName = bucketName ?? env.s3.bucket;
   const raw = await getTextContent(key, bucketName);
   if (!raw) {
@@ -118,7 +123,11 @@ export const getTweets = async (key: string | Buffer, bucketName?: string): Prom
   }
 };
 
-export const putArchivedTweets = async (date: Types.DateType, tweets: Types.TweetEx[], objects: string[]) => {
+export const putArchivedTweets = async (
+  date: Types.DateType,
+  tweets: Types.TweetEx[],
+  objects: string[]
+) => {
   const year = date.year;
   const yearMonth = `${date.year}-${date.month}`;
   const yearMonthDate = `${date.year}-${date.month}-${date.day}`;
@@ -157,7 +166,9 @@ export const putUserTweets = async (tweets: Types.TweetEx[]) => {
   for (const chunk of util.groupByDate(tweets)) {
     const content = chunk.tweets.map((x) => JSON.stringify(x)).join("\n");
     // const now = moment().utcOffset(env.tweetOption.utcOffset).format("YYYYMMDD.HHmmss.SSS");
-    const now = dayjs().utcOffset(env.tweetOption.utcOffset).format("YYYYMMDD.HHmmss.SSS");
+    const now = dayjs()
+      .utcOffset(env.tweetOption.utcOffset)
+      .format("YYYYMMDD.HHmmss.SSS");
     const keyName = `raw/user/${chunk.date}/${now}.json`;
     console.log(`s3://${env.s3.bucket}/${keyName}を保存します`);
     await s3
@@ -180,7 +191,9 @@ export const putTimelineTweets = async (tweets: Types.TweetEx[]) => {
   for (const chunk of util.groupByDate(tweets)) {
     const content = chunk.tweets.map((x) => JSON.stringify(x)).join("\n");
     // const now = moment().utcOffset(env.tweetOption.utcOffset).format("YYYYMMDD.HHmmss.SSS");
-    const now = dayjs().utcOffset(env.tweetOption.utcOffset).format("YYYYMMDD.HHmmss.SSS");
+    const now = dayjs()
+      .utcOffset(env.tweetOption.utcOffset)
+      .format("YYYYMMDD.HHmmss.SSS");
     const keyName = `raw/home/${chunk.date}/${now}.json`;
     console.log(`s3://${env.s3.bucket}/${keyName}を保存します`);
     await s3
@@ -199,8 +212,12 @@ export const putTimelineTweets = async (tweets: Types.TweetEx[]) => {
  * @param date
  */
 export const getFragments = async (date: Types.DateType) => {
-  const userTweets = await listAllObjects(`raw/user/${date.year}-${date.month}-${date.day}/`);
-  const homeTweets = await listAllObjects(`raw/home/${date.year}-${date.month}-${date.day}/`);
+  const userTweets = await listAllObjects(
+    `raw/user/${date.year}-${date.month}-${date.day}/`
+  );
+  const homeTweets = await listAllObjects(
+    `raw/home/${date.year}-${date.month}-${date.day}/`
+  );
   return { userTweets, homeTweets };
 };
 
@@ -213,10 +230,15 @@ type SimplifiedS3Object = {
  *
  * @param keyPrefix
  */
-export const listAllObjects = async (keyPrefix: string, bucketName?: string): Promise<SimplifiedS3Object[]> => {
+export const listAllObjects = async (
+  keyPrefix: string,
+  bucketName?: string
+): Promise<SimplifiedS3Object[]> => {
   bucketName = bucketName ?? env.s3.bucket;
   console.log(`'s3://${bucketName}/${keyPrefix}*' のオブジェクトを検索します`);
-  const firstChunk = await s3.listObjectsV2({ Bucket: env.s3.bucket, Prefix: keyPrefix }).promise();
+  const firstChunk = await s3
+    .listObjectsV2({ Bucket: env.s3.bucket, Prefix: keyPrefix })
+    .promise();
   if (!firstChunk.Contents) {
     return [];
   }
@@ -225,7 +247,9 @@ export const listAllObjects = async (keyPrefix: string, bucketName?: string): Pr
     return { key: obj.Key ?? "", lastModified: dayjs(obj.LastModified) };
   };
 
-  const result: SimplifiedS3Object[][] = [firstChunk.Contents.map((x) => simplify(x))];
+  const result: SimplifiedS3Object[][] = [
+    firstChunk.Contents.map((x) => simplify(x)),
+  ];
 
   // NextContinuationTokenがある限り繰り返し取得
   let continueToken = firstChunk.NextContinuationToken;
@@ -250,7 +274,10 @@ export const listAllObjects = async (keyPrefix: string, bucketName?: string): Pr
 /**
  * フォロイー・フォロワーのIDデータを保存する。タイムスタンプ付きのものと latest.json の2つを保存する
  */
-export const putFriendAndFollowerIds = async (timestamp: dayjs.Dayjs, ids: Types.FriendsAndFollowersIdsType) => {
+export const putFriendAndFollowerIds = async (
+  timestamp: dayjs.Dayjs,
+  ids: Types.FriendsAndFollowersIdsType
+) => {
   await s3
     .putObject({
       Bucket: env.s3.bucket,
@@ -274,7 +301,9 @@ export const putFriendAndFollowerIds = async (timestamp: dayjs.Dayjs, ids: Types
  * 前回保存したフォロイー・フォロワーのIDデータを取得する。見つからなければundefinedが返される
  */
 export const getLatestFriendFollowerIds = async () => {
-  return (await getContent("raw/ff/latest.json", Types.isFriendsAndFollowersIdsType))?.data;
+  return (
+    await getContent("raw/ff/latest.json", Types.isFriendsAndFollowersIdsType)
+  )?.data;
 };
 
 /**
@@ -284,7 +313,10 @@ export const getLatestFavoriteTweetIds = async () => {
   return getContent<string[]>("raw/event/favorites/latest.json");
 };
 
-export const mergeTweetFragments = (homeTL: SimplifiedS3Object[], userTL: SimplifiedS3Object[]) => {
+export const mergeTweetFragments = (
+  homeTL: SimplifiedS3Object[],
+  userTL: SimplifiedS3Object[]
+) => {
   homeTL.sort(compareSimplifiedS3ObjectByTimestamp);
   userTL.sort(compareSimplifiedS3ObjectByTimestamp);
 };
@@ -294,7 +326,10 @@ export const mergeTweetFragments = (homeTL: SimplifiedS3Object[], userTL: Simpli
  * @param obj1
  * @param obj2
  */
-export const compareSimplifiedS3ObjectByTimestamp = (obj1: SimplifiedS3Object, obj2: SimplifiedS3Object) => {
+export const compareSimplifiedS3ObjectByTimestamp = (
+  obj1: SimplifiedS3Object,
+  obj2: SimplifiedS3Object
+) => {
   // どちらのタイムスタンプもundefinedなら0
   if (obj1.lastModified === undefined && obj2.lastModified === undefined) {
     return 0;
@@ -321,7 +356,9 @@ export const archive = async (date: Types.DateType, localPath?: string) => {
   const keys = await getFragments(date);
   const allTweets: Types.TweetEx[] = [];
   const ids: string[] = [];
-  console.log(`ホームTLが${keys.homeTweets.length}件、ユーザーTLが${keys.userTweets.length}件見つかりました`);
+  console.log(
+    `ホームTLが${keys.homeTweets.length}件、ユーザーTLが${keys.userTweets.length}件見つかりました`
+  );
   console.log("ホームTLのマージを行います");
   for (const item of keys.homeTweets) {
     const tweets = await getTweets(item.key);
@@ -345,7 +382,10 @@ export const archive = async (date: Types.DateType, localPath?: string) => {
   }
 
   // ソースとなったオブジェクトのリスト
-  const sourceList = [...keys.homeTweets.map((x) => x.key), ...keys.userTweets.map((x) => x.key)];
+  const sourceList = [
+    ...keys.homeTweets.map((x) => x.key),
+    ...keys.userTweets.map((x) => x.key),
+  ];
 
   console.log("マージが終わりました。ソートします");
   allTweets.sort((a, b) => util.compareNumber(a.id_str, b.id_str));
