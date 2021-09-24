@@ -80,7 +80,7 @@ export interface UserMentionEntity {
 }
 export interface Entities {
   hashtags: HashtagEntity[];
-  media: MediaEntity[];
+  media?: MediaEntity[];
   urls: UrlEntity[];
   user_mentions: UserMentionEntity[];
 }
@@ -211,6 +211,11 @@ export interface Status {
   lang?: string;
   place?: Place;
   possibly_sensitive?: boolean;
+  quoted_status_permalink?: {
+    url: string;
+    expanded: string;
+    display: string;
+  };
   quoted_status_id?: number;
   quoted_status_id_str?: string;
   quoted_status?: Status;

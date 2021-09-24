@@ -283,6 +283,57 @@ const alterTweet = (tweets: Types.Tweet[], serverTimestamp?: string): Types.Twee
   });
 };
 
+export const toTsv = (tweet: Types.TweetEx): string => {
+  return [
+    dayjs(tweet.timestampLocal).format("YYYY-MM-DD HH:mm:ss"),
+    tweet.id_str,
+    "@" + tweet.user.screen_name,
+    tweet.user.name?.replace(/[\r\n\t]+/g, " "),
+    normalizeRetweet(tweet).replace(/[\r\n\t]+/g, " ")
+  ].join("\t");
+}
+
+export const normalizeRetweet = (tweet: Types.Tweet): string => {
+  // RTならRTされたツイートの方で処理を行う
+  if (tweet.retweeted_status) {
+    const fullText = normalizeRetweet(tweet.retweeted_status);
+    // 先頭に「RT @someone: 」を追加して返す
+    return `RT @${tweet.retweeted_status.user.screen_name}: ${fullText}`;
+  }
+
+  // QTなら末尾に「QT @someone: ...」を追加して返す
+  if (tweet.quoted_status && tweet.quoted_status_permalink) {
+    const quotedFullText = normalizeRetweet(tweet.quoted_status);
+    let fullText = expandShortUrls(tweet);
+    fullText = fullText.replace(tweet.quoted_status_permalink.expanded, "").trimEnd();
+    return  `${fullText} QT @${tweet.quoted_status.user.screen_name}: ${quotedFullText}`;
+  }
+
+  // 通常のツイートなら普通に返す
+  return expandShortUrls(tweet);
+}
+
+/**
+ * t.coで短縮されたURLを元に戻す
+ * @param tweet 
+ * @returns 
+ */
+export const expandShortUrls = (tweet: Types.Tweet): string => {
+  let result = tweet.full_text ?? "";
+  if (Array.isArray(tweet.entities.urls) && tweet.entities.urls.length > 0) {
+    tweet.entities.urls.forEach(x => {
+      result = result.replace(x.url, x.expanded_url);
+    });
+  }
+  if (Array.isArray(tweet.entities.media) && tweet.entities.media.length > 0) {
+      tweet.entities.media.forEach(x => {
+      result = result.replace(x.url, x.expanded_url);
+    });
+  }
+  
+  return result.replace(/[\r\n\t]+/g, " ");
+}
+
 /**
  * ツイートを送信する。インスタンス生成時に dryRun = true を指定していたら console.log で出力するだけ
  * @param text
