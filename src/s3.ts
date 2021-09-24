@@ -6,6 +6,7 @@ dayjs.extend(require("dayjs/plugin/utc"));
 import * as env from "./env";
 import * as Types from "./types";
 import * as util from "./util";
+import { toTsv } from "./twitterClient";
 
 const s3 = new AWS.S3({ region: env.s3.region });
 
@@ -131,28 +132,51 @@ export const putArchivedTweets = async (
   const year = date.year;
   const yearMonth = `${date.year}-${date.month}`;
   const yearMonthDate = `${date.year}-${date.month}-${date.day}`;
-  const key = `archive/${year}/${yearMonth}/${yearMonthDate}.json`;
-  console.log(`s3://${env.s3.bucket}/${key}を保存します`);
-  const content = tweets.map((x) => JSON.stringify(x)).join("\n");
-  await s3
-    .putObject({
-      Body: content,
-      Bucket: env.s3.bucket,
-      Key: key,
-      ContentType: "application/json; charset=utf-8",
-    })
-    .promise();
+  {
+    // ツイート本文（JSONL形式）
+    const key = `archive/${year}/${yearMonth}/${yearMonthDate}.json`;
+    console.log(`s3://${env.s3.bucket}/${key}を保存します`);
+    const content = tweets.map((x) => JSON.stringify(x)).join("\n");
+    await s3
+      .putObject({
+        Body: content,
+        Bucket: env.s3.bucket,
+        Key: key,
+        ContentType: "application/json; charset=utf-8",
+      })
+      .promise();
+    console.log(`s3://${env.s3.bucket}/${key}を保存しました`);
+  }
+  {
+    // ツイート本文（TSV形式）
+    const key = `tsv/${year}/${yearMonth}/${yearMonthDate}.txt`;
+    console.log(`s3://${env.s3.bucket}/${key}を保存します`);
+    const content = tweets.map((x) => toTsv(x)).join("\n");
 
-  console.log(`s3://${env.s3.bucket}/${key}を保存しました`);
+    await s3
+      .putObject({
+        Body: content,
+        Bucket: env.s3.bucket,
+        Key: key,
+        ContentType: "text/plain; charset=utf-8",
+      })
+      .promise();
+    console.log(`s3://${env.s3.bucket}/${key}を保存しました`);
+  }
 
-  await s3
-    .putObject({
-      Body: objects.join("\n"),
-      Bucket: env.s3.bucket,
-      Key: key.replace("json", "txt"),
-      ContentType: "text/plain; charset=utf-8",
-    })
-    .promise();
+  {
+    const key = `archive/${year}/${yearMonth}/${yearMonthDate}.txt`;
+    console.log(`s3://${env.s3.bucket}/${key}を保存します`);
+    await s3
+      .putObject({
+        Body: objects.join("\n"),
+        Bucket: env.s3.bucket,
+        Key: key,
+        ContentType: "text/plain; charset=utf-8",
+      })
+      .promise();
+    console.log(`s3://${env.s3.bucket}/${key}を保存しました`);
+  }
 };
 
 /**
@@ -224,9 +248,11 @@ export const getFragments = async (date: Types.DateType) => {
 /**
  * 既に作成済みのアーカイブデータを取得して返す
  * @param date 日付
- * @returns 
+ * @returns
  */
-export const getArchive = async (date: Types.DateType): Promise<{ filenames: string[], tweets: Types.TweetEx[] } | undefined> => {
+export const getArchive = async (
+  date: Types.DateType
+): Promise<{ filenames: string[]; tweets: Types.TweetEx[] } | undefined> => {
   // archive/2021/2021-09/2021-09-23 みたいな文字列
   const basename = `archive/${date.year}/${date.year}-${date.month}/${date.year}-${date.month}-${date.day}`;
 
@@ -242,14 +268,14 @@ export const getArchive = async (date: Types.DateType): Promise<{ filenames: str
     const tweets = await getTweets(`${basename}.json`);
     return {
       filenames: fileList.body.split("\n"),
-      tweets: tweets
+      tweets: tweets,
     };
-  } catch(e) {
+  } catch (e) {
     // テキストファイルがあるんだからJSONの方もあるはずだけど、もし見つからない/JSONLとしてパースに失敗したらこのファイルの存在は無視する
     console.error(e);
     return undefined;
   }
-}
+};
 
 type SimplifiedS3Object = {
   key: string;
@@ -383,16 +409,31 @@ export const compareSimplifiedS3ObjectByTimestamp = (
  */
 export const archive = async (date: Types.DateType, localPath?: string) => {
   console.log(`${date.year}-${date.month}-${date.day}のログを処理します`);
-  const archive = await getArchive(date) || {filenames: [], tweets: []}
-  console.log(`前回の処理で${archive.filenames.length}個のファイル、${archive.tweets.length}件のツイートを処理しています`);
+  const archive = (await getArchive(date)) || { filenames: [], tweets: [] };
+  console.log(
+    `前回の処理で${archive.filenames.length}個のファイル、${archive.tweets.length}件のツイートを処理しています`
+  );
 
   const keys = await getFragments(date);
   const allTweets: Types.TweetEx[] = archive.tweets;
-  const ids: string[] = [];
-  console.log(`ホームTLのファイルが${keys.homeTweets.length}個、ユーザーTLのファイルが${keys.userTweets.length}個見つかりました`);
-  keys.homeTweets = keys.homeTweets.filter(x => archive.filenames.indexOf(x.key) === -1);
-  keys.userTweets = keys.userTweets.filter(x => archive.filenames.indexOf(x.key) === -1);
-  console.log(`既に処理済みのファイルを除外したところ、ホームTLのファイルが${keys.homeTweets.length}個、ユーザーTLのファイルが${keys.userTweets.length}個になりました`);
+  const ids: string[] = archive.tweets.map(x => x.id_str);
+  console.log(
+    `ホームTLのファイルが${keys.homeTweets.length}個、ユーザーTLのファイルが${keys.userTweets.length}個見つかりました`
+  );
+  keys.homeTweets = keys.homeTweets.filter(
+    (x) => archive.filenames.indexOf(x.key) === -1
+  );
+  keys.userTweets = keys.userTweets.filter(
+    (x) => archive.filenames.indexOf(x.key) === -1
+  );
+  console.log(
+    `既に処理済みのファイルを除外したところ、ホームTLのファイルが${keys.homeTweets.length}個、ユーザーTLのファイルが${keys.userTweets.length}個になりました`
+  );
+  if (keys.homeTweets.length + keys.userTweets.length === 0) {
+    console.log("処理すべき新しいファイルがないので何もしません");
+    return;
+  }
+
   console.log("ホームTLのマージを行います");
   for (const item of keys.homeTweets) {
     const tweets = await getTweets(item.key);
@@ -416,7 +457,11 @@ export const archive = async (date: Types.DateType, localPath?: string) => {
   }
 
   // ソースとなったオブジェクトのリスト
-  const sourceList = [...archive.filenames, ...keys.homeTweets.map((x) => x.key), ...keys.userTweets.map((x) => x.key)];
+  const sourceList = [
+    ...archive.filenames,
+    ...keys.homeTweets.map((x) => x.key),
+    ...keys.userTweets.map((x) => x.key),
+  ];
 
   console.log("マージが終わりました。ソートします");
   allTweets.sort((a, b) => util.compareNumber(a.id_str, b.id_str));
